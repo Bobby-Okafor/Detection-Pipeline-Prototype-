@@ -1,0 +1,8 @@
+[
+  {
+    "Id": 4624,
+    "TimeCreated": { "SystemTime": "2026-05-14T12:05:00.114Z" },
+    "Computer": "BOBBY",
+    "Message": "An account was successfully logged on.\n\nSubject:\n\tSecurity ID:\t\tNULL SID\n\nNew Logon:\n\tSecurity ID:\t\tS-1-5-21-3393481779-190662513-27354350-500\n\tAccount Name:\t\tAdministrator\n\tAccount Domain:\t\tBOBBY\n\tLogon ID:\t\t0x44ABC\n\tLinked Logon ID:\t\t0x0\n\tNetwork Account Name:\t-\n\tNetwork Account Domain:\t-\n\tLogon GUID:\t\t{00000000-0000-0000-0000-000000000000}\n\nLogon Information:\n\tLogon Type:\t\t3\n\tRestricted Admin Mode:\t-\n\tRemote Credential Guard:\t-\n\tVirtual Account:\t\tNo\n\tElevated Token:\t\tYes\n\nNetwork Information:\n\tWorkstation Name:\tkali\n\tSource Network Address:\t192.168.126.128\n\tSource Port:\t\t50112\n\nDetailed Authentication Information:\n\tLogon Process:\t\tNtLmSsp\n\tAuthentication Package:\tNTLM\n\tTransited Services:\t-\n\tPackage Name (NTLM only):\tNTLM V2\n\tKey Length:\t\t128"
+  }
+]

@@ -28,13 +28,13 @@ let FailedLogons = SecurityEvent
 let SuccessLogons = SecurityEvent
 | where TimeGenerated > ago(1d)
 | where EventID == 4624
-| where LogonType in ("3", "10")
+| where tostring(LogonType) in ("3", "10")
 | where IpAddress !in ("127.0.0.1", "-", "::1")
 | project
     t_success = TimeGenerated,
     SuccessUser = TargetUserName,
     SuccessIp   = IpAddress,
-    LogonId     = TargetLogonId,
+    LogonId     = tolower(tostring(TargetLogonId)),
     LogonType,
     Computer;
 
@@ -43,7 +43,7 @@ let PostExec = WindowsEvent
 | where EventID == 1
 | extend
     User    = tostring(EventData.User),
-    LogonId = tostring(EventData.LogonId),
+    LogonId = tolower(tostring(EventData.LogonId)),
     Image   = tostring(EventData.Image),
     CmdLine = tostring(EventData.CommandLine),
     ProcGuid = tostring(EventData.ProcessGuid)

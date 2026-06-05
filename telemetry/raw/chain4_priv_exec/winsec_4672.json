@@ -1,0 +1,8 @@
+[
+  {
+    "Id": 4672,
+    "TimeCreated": { "SystemTime": "2026-05-14T12:05:01.002Z" },
+    "Computer": "BOBBY",
+    "Message": "Special privileges assigned to new logon.\n\nSubject:\n\tSecurity ID:\t\tS-1-5-21-3393481779-190662513-27354350-500\n\tAccount Name:\t\tAdministrator\n\tAccount Domain:\t\tBOBBY\n\tLogon ID:\t\t0x44ABC\n\nPrivileges:\t\tSeDebugPrivilege\n\t\t\tSeImpersonatePrivilege\n\t\t\tSeTcbPrivilege"
+  }
+]

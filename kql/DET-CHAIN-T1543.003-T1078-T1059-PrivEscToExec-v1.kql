@@ -1,0 +1,104 @@
+// Detection ID: DET-CHAIN-T1543.003-T1078-T1059-PrivEscToExec-v1
+// Description:  Privileged logon (EID 4624 + 4672), followed by service
+//               installation (EID 7045), followed by process execution
+//               (EID 4688) within 5 minutes.
+// Data Sources: SecurityEvent (4624, 4672, 4688, 7045)
+// Severity:     Critical
+// Confidence:   Four-source correlation. LogonId joins identity and process
+//               events; host/time joins service install because EID 7045 does
+//               not consistently include user or LogonId context.
+// MITRE:        T1543.003, T1078, T1059
+// Lab validated: 2026-05-14 against Kali attacker 192.168.126.128
+// Author:       Bobby Okafor
+// Version:      1
+
+let window = 5m;
+
+let PrivilegedLogons = SecurityEvent
+| where TimeGenerated > ago(1d)
+| where EventID == 4624
+| where tostring(LogonType) in ("3", "10")
+| where IpAddress !in ("127.0.0.1", "-", "::1", "")
+| project
+    t_logon = TimeGenerated,
+    Computer,
+    User = TargetUserName,
+    Domain = TargetDomainName,
+    LogonId = tolower(tostring(TargetLogonId)),
+    LogonType,
+    SourceIp = IpAddress,
+    SourcePort = IpPort;
+
+let SpecialPrivileges = SecurityEvent
+| where TimeGenerated > ago(1d)
+| where EventID == 4672
+| project
+    t_priv = TimeGenerated,
+    Computer,
+    PrivUser = SubjectUserName,
+    PrivDomain = SubjectDomainName,
+    LogonId = tolower(tostring(SubjectLogonId)),
+    Privileges = PrivilegeList;
+
+let ServiceInstalls = SecurityEvent
+| where TimeGenerated > ago(1d)
+| where EventID == 7045
+| project
+    t_service = TimeGenerated,
+    Computer,
+    ServiceName,
+    ServiceFileName,
+    ServiceType,
+    ServiceStartType,
+    ServiceAccount;
+
+let ProcessExec = SecurityEvent
+| where TimeGenerated > ago(1d)
+| where EventID == 4688
+| project
+    t_exec = TimeGenerated,
+    Computer,
+    ExecUser = SubjectUserName,
+    ExecDomain = SubjectDomainName,
+    LogonId = tolower(tostring(SubjectLogonId)),
+    ProcessName = NewProcessName,
+    CommandLine = CommandLine,
+    ParentProcess = ParentProcessName;
+
+PrivilegedLogons
+| join kind=inner SpecialPrivileges on Computer, LogonId
+| where t_priv between (t_logon .. t_logon + window)
+| join kind=inner ServiceInstalls on Computer
+| where t_service between (t_logon .. t_logon + window)
+| join kind=inner ProcessExec on Computer, LogonId
+| where t_exec >= t_service
+| where t_exec - t_logon <= window
+| extend
+    DetectionID     = "DET-CHAIN-T1543.003-T1078-T1059-PrivEscToExec-v1",
+    Severity        = "Critical",
+    MITRETechniques = "T1543.003, T1078, T1059",
+    DeltaSeconds    = datetime_diff('second', t_exec, t_logon),
+    JoinFields      = "logon_id + host_time",
+    SourceDiversity = 4
+| project
+    TimeGenerated = t_logon,
+    DetectionID,
+    Severity,
+    Computer,
+    User,
+    Domain,
+    SourceIp,
+    LogonType,
+    LogonId,
+    Privileges,
+    ServiceName,
+    ServiceFileName,
+    ServiceAccount,
+    ProcessName,
+    CommandLine,
+    ParentProcess,
+    DeltaSeconds,
+    MITRETechniques,
+    JoinFields,
+    SourceDiversity
+| sort by TimeGenerated desc

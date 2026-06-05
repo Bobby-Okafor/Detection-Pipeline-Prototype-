@@ -1,0 +1,8 @@
+[
+  {
+    "Id": 7045,
+    "TimeCreated": { "SystemTime": "2026-05-14T12:05:38.617Z" },
+    "Computer": "BOBBY",
+    "Message": "A service was installed in the system.\n\nService Name:\t\tUpdaterSvc\nService File Name:\tC:\\Windows\\Temp\\updater.exe -service\nService Type:\t\tuser mode service\nService Start Type:\tdemand start\nService Account:\tLocalSystem"
+  }
+]

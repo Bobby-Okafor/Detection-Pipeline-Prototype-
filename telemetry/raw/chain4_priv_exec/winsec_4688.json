@@ -1,0 +1,8 @@
+[
+  {
+    "Id": 4688,
+    "TimeCreated": { "SystemTime": "2026-05-14T12:05:44.904Z" },
+    "Computer": "BOBBY",
+    "Message": "A new process has been created.\n\nCreator Subject:\n\tSecurity ID:\t\tS-1-5-21-3393481779-190662513-27354350-500\n\tAccount Name:\t\tAdministrator\n\tAccount Domain:\t\tBOBBY\n\tLogon ID:\t\t0x44ABC\n\nTarget Subject:\n\tSecurity ID:\t\tS-1-0-0\n\tAccount Name:\t\t-\n\tAccount Domain:\t\t-\n\tLogon ID:\t\t0x0\n\nProcess Information:\n\tNew Process ID:\t\t0x1c44\n\tNew Process Name:\tC:\\Windows\\Temp\\updater.exe\n\tToken Elevation Type:\t%%1936\n\tMandatory Label:\t\tMandatory Label\\High Mandatory Level\n\tCreator Process ID:\t0x02f0\n\tCreator Process Name:\tC:\\Windows\\System32\\services.exe\n\tProcess Command Line:\tC:\\Windows\\Temp\\updater.exe -service"
+  }
+]

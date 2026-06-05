@@ -109,65 +109,18 @@ def detect_exec_to_c2(
                 continue
 
             ps_guid = ps_event.get("process_guid")
-            if ps_guid == "{00000000-0000-0000-0000-000000000000}":
-                ps_guid = None
             ps_time = to_epoch(ps_event.get("time"))
 
             for net_event in net_events:
                 net_guid = net_event.get("process_guid")
-                if net_guid == "{00000000-0000-0000-0000-000000000000}":
-                    net_guid = None
                 net_time = to_epoch(net_event.get("time"))
                 delta = net_time - ps_time
-                
 
                 if delta < 0 or delta > window_seconds:
                     continue
 
-
-                # Must be same process via ProcessGuid (default)
-                join_path = "process_guid"
-
-                # Path A — strong ProcessGuid join
-                if ps_guid and net_guid:
-                    if ps_guid == net_guid:
-                        join_path = "process_guid"
-                    else:
-                        # GUID mismatch -> degraded telemetry fallback based on host + time
-                        ps_host = (ps_event.get("host") or "").lower()
-                        net_host = (net_event.get("host") or "").lower()
-
-                        if ps_host and net_host and ps_host == net_host:
-                            if delta <= window_seconds:
-                                join_path = "guid_mismatch_host_time"
-                            else:
-                                continue
-                        else:
-                            continue
-
-                # Path B — degraded fallback correlation when network event lacks process guid
-                elif not net_guid:
-                    ps_user = (ps_event.get("user") or "").lower()
-                    net_user = (net_event.get("user") or "").lower()
-
-                    ps_host = (ps_event.get("host") or "").lower()
-                    net_host = (net_event.get("host") or "").lower()
-
-                    # Medium fidelity: user + host
-                    if ps_user and net_user and ps_user == net_user and ps_host == net_host:
-                        join_path = "user_host_time"
-
-                    # Low fidelity: host + tight time window only
-                    elif ps_host and net_host and ps_host == net_host:
-                        if delta <= window_seconds:
-                            join_path = "host_time_fallback"
-                        else:
-                            continue
-
-                    else:
-                        continue
-
-                else:
+                # Must be same process via ProcessGuid
+                if ps_guid and net_guid and ps_guid != net_guid:
                     continue
 
                 dst_ip   = net_event.get("dst_ip") or ""
@@ -191,15 +144,7 @@ def detect_exec_to_c2(
                     detection_id="DET-CHAIN-T1059.001-T1071.001-ExecToC2-v1",
                     techniques=["T1059.001", "T1071.001"],
                     severity="high",
-                    confidence_score=(
-    round(max(chain.confidence - 0.35, 0.0), 3)
-    if join_path == "guid_mismatch_host_time"
-    else round(max(chain.confidence - 0.30, 0.0), 3)
-    if join_path == "host_time_fallback"
-    else round(max(chain.confidence - 0.15, 0.0), 3)
-    if join_path == "user_host_time"
-    else chain.confidence
-),
+                    confidence_score=chain.confidence,
                     entropy_score=chain.entropy_score,
                     source_diversity=chain.source_diversity,
                     alert_type="ENCODED_PS_C2_BEACON",
@@ -218,7 +163,7 @@ def detect_exec_to_c2(
                         "dst_port":      dst_port,
                         "dst_hostname":  net_event.get("dst_hostname"),
                         "delta_seconds": round(delta, 2),
-                        "join_field":    join_path,
+                        "join_field":    "process_guid",
                     },
                 ))
 
@@ -483,10 +428,11 @@ def detect_priv_esc_to_exec(
         has_service   = chain.has_source("winsec_service")
         has_exec      = chain.has_source("winsec_process") or chain.has_source("sysmon_process")
 
-        if not (has_success and has_service and has_exec):
+        if not (has_success and has_privilege and has_service and has_exec):
             continue
 
         logons   = chain.get_events_by_id(4624)
+        privileges = chain.get_events_by_id(4672)
         services = chain.get_events_by_id(7045)
         execs    = chain.get_events_by_id(4688) + chain.get_events_by_id(1)
 
@@ -499,6 +445,19 @@ def detect_priv_esc_to_exec(
 
             # Suspicious logon types: Network (3) or RemoteInteractive (10)
             if logon_type not in ("3", "10"):
+                continue
+
+            matching_privileges = [
+                p for p in privileges
+                if to_epoch(p.get("time")) >= logon_t
+                and to_epoch(p.get("time")) - logon_t <= window_seconds
+                and (
+                    (lid and p.get("logon_id") == lid) or
+                    (user and p.get("user", "").lower() == user)
+                )
+            ]
+
+            if not matching_privileges:
                 continue
 
             # Find service installs after this logon
@@ -559,6 +518,7 @@ def detect_priv_esc_to_exec(
                     "src_ip":        src_ip,
                     "logon_type":    logon_type,
                     "logon_id":      lid,
+                    "privileges":    matching_privileges[0].get("privileges"),
                     "services":      [s.get("service_name") for s in post_services],
                     "service_files": [s.get("service_file") for s in post_services],
                     "first_process": first_exec.get("process_name"),
@@ -594,4 +554,4 @@ def run_all_detections(
     alerts.sort(key=lambda a: a.get("time_start") or "")
 
     print(f"[+] Detections fired: {len(alerts)}", file=sys.stderr)
-    return alertss
+    return alerts

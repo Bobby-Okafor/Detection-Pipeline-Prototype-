@@ -1,32 +1,32 @@
-﻿[
-    {
-        "Id":  3,
-        "TimeCreated":  "\/Date(1779362436704)\/",
-        "Computer":  "BoBbY",
-        "Message":  "Network connection detected:\r\nRuleName: Usermode\r\nUtcTime: 2026-05-21 11:20:41.344\r\nProcessGuid: {282c4705-448c-6a0c-d909-000000005c00}\r\nProcessId: 2196\r\nImage: C:\\Users\\LENOVO\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe\r\nUser: BOBBY\\LENOVO\r\nProtocol: tcp\r\nInitiated: true\r\nSourceIsIpv6: false\r\nSourceIp: 172.20.10.3\r\nSourceHostname: BoBbY\r\nSourcePort: 38113\r\nSourcePortName: -\r\nDestinationIsIpv6: false\r\nDestinationIp: 150.171.109.209\r\nDestinationHostname: -\r\nDestinationPort: 443\r\nDestinationPortName: https"
-    },
-    {
-        "Id":  3,
-        "TimeCreated":  "\/Date(1779362436442)\/",
-        "Computer":  "BoBbY",
-        "Message":  "Network connection detected:\r\nRuleName: Usermode\r\nUtcTime: 2026-05-21 11:20:41.127\r\nProcessGuid: {282c4705-448c-6a0c-d909-000000005c00}\r\nProcessId: 2196\r\nImage: C:\\Users\\LENOVO\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe\r\nUser: BOBBY\\LENOVO\r\nProtocol: udp\r\nInitiated: true\r\nSourceIsIpv6: false\r\nSourceIp: 172.20.10.3\r\nSourceHostname: BoBbY\r\nSourcePort: 52235\r\nSourcePortName: -\r\nDestinationIsIpv6: false\r\nDestinationIp: 172.20.10.1\r\nDestinationHostname: -\r\nDestinationPort: 53\r\nDestinationPortName: domain"
-    },
-    {
-        "Id":  3,
-        "TimeCreated":  "\/Date(1779362436442)\/",
-        "Computer":  "BoBbY",
-        "Message":  "Network connection detected:\r\nRuleName: Usermode\r\nUtcTime: 2026-05-21 11:20:41.126\r\nProcessGuid: {282c4705-448c-6a0c-d909-000000005c00}\r\nProcessId: 2196\r\nImage: C:\\Users\\LENOVO\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe\r\nUser: BOBBY\\LENOVO\r\nProtocol: udp\r\nInitiated: true\r\nSourceIsIpv6: false\r\nSourceIp: 172.20.10.3\r\nSourceHostname: BoBbY\r\nSourcePort: 53847\r\nSourcePortName: -\r\nDestinationIsIpv6: false\r\nDestinationIp: 172.20.10.1\r\nDestinationHostname: -\r\nDestinationPort: 53\r\nDestinationPortName: domain"
-    },
-    {
-        "Id":  3,
-        "TimeCreated":  "\/Date(1779362377871)\/",
-        "Computer":  "BoBbY",
-        "Message":  "Network connection detected:\r\nRuleName: Usermode\r\nUtcTime: 2026-05-21 11:19:41.578\r\nProcessGuid: {282c4705-ea45-6a0e-2812-000000005c00}\r\nProcessId: 1756\r\nImage: C:\\Users\\LENOVO\\AppData\\Local\\Microsoft\\OneDrive\\26.078.0426.0002\\FileCoAuth.exe\r\nUser: BOBBY\\LENOVO\r\nProtocol: tcp\r\nInitiated: true\r\nSourceIsIpv6: false\r\nSourceIp: 172.20.10.3\r\nSourceHostname: BoBbY\r\nSourcePort: 38094\r\nSourcePortName: -\r\nDestinationIsIpv6: false\r\nDestinationIp: 20.42.72.131\r\nDestinationHostname: -\r\nDestinationPort: 443\r\nDestinationPortName: https"
-    },
-    {
-        "Id":  3,
-        "TimeCreated":  "\/Date(1779362363469)\/",
-        "Computer":  "BoBbY",
-        "Message":  "Network connection detected:\r\nRuleName: Alert,Metasploit\r\nUtcTime: 2026-05-21 11:19:28.153\r\nProcessGuid: {00000000-0000-0000-0000-000000000000}\r\nProcessId: 11576\r\nImage: \u003cunknown process\u003e\r\nUser: -\r\nProtocol: tcp\r\nInitiated: true\r\nSourceIsIpv6: false\r\nSourceIp: 192.168.126.1\r\nSourceHostname: BoBbY\r\nSourcePort: 38091\r\nSourcePortName: -\r\nDestinationIsIpv6: false\r\nDestinationIp: 192.168.126.128\r\nDestinationHostname: -\r\nDestinationPort: 4444\r\nDestinationPortName: -"
-    }
+[
+  {
+    "Id": 3,
+    "TimeCreated": "2026-05-21T11:20:36.704Z",
+    "Computer": "BoBbY",
+    "Message": "Network connection detected:\r\nRuleName: Usermode\r\nUtcTime: 2026-05-21 11:20:41.344\r\nProcessGuid: {282c4705-448c-6a0c-d909-000000005c00}\r\nProcessId: 2196\r\nImage: C:\\Users\\LENOVO\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe\r\nUser: BOBBY\\LENOVO\r\nProtocol: tcp\r\nInitiated: true\r\nSourceIsIpv6: false\r\nSourceIp: 172.20.10.3\r\nSourceHostname: BoBbY\r\nSourcePort: 38113\r\nSourcePortName: -\r\nDestinationIsIpv6: false\r\nDestinationIp: 150.171.109.209\r\nDestinationHostname: -\r\nDestinationPort: 443\r\nDestinationPortName: https"
+  },
+  {
+    "Id": 3,
+    "TimeCreated": "2026-05-21T11:20:36.442Z",
+    "Computer": "BoBbY",
+    "Message": "Network connection detected:\r\nRuleName: Usermode\r\nUtcTime: 2026-05-21 11:20:41.127\r\nProcessGuid: {282c4705-448c-6a0c-d909-000000005c00}\r\nProcessId: 2196\r\nImage: C:\\Users\\LENOVO\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe\r\nUser: BOBBY\\LENOVO\r\nProtocol: udp\r\nInitiated: true\r\nSourceIsIpv6: false\r\nSourceIp: 172.20.10.3\r\nSourceHostname: BoBbY\r\nSourcePort: 52235\r\nSourcePortName: -\r\nDestinationIsIpv6: false\r\nDestinationIp: 172.20.10.1\r\nDestinationHostname: -\r\nDestinationPort: 53\r\nDestinationPortName: domain"
+  },
+  {
+    "Id": 3,
+    "TimeCreated": "2026-05-21T11:20:36.442Z",
+    "Computer": "BoBbY",
+    "Message": "Network connection detected:\r\nRuleName: Usermode\r\nUtcTime: 2026-05-21 11:20:41.126\r\nProcessGuid: {282c4705-448c-6a0c-d909-000000005c00}\r\nProcessId: 2196\r\nImage: C:\\Users\\LENOVO\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe\r\nUser: BOBBY\\LENOVO\r\nProtocol: udp\r\nInitiated: true\r\nSourceIsIpv6: false\r\nSourceIp: 172.20.10.3\r\nSourceHostname: BoBbY\r\nSourcePort: 53847\r\nSourcePortName: -\r\nDestinationIsIpv6: false\r\nDestinationIp: 172.20.10.1\r\nDestinationHostname: -\r\nDestinationPort: 53\r\nDestinationPortName: domain"
+  },
+  {
+    "Id": 3,
+    "TimeCreated": "2026-05-21T11:19:37.871Z",
+    "Computer": "BoBbY",
+    "Message": "Network connection detected:\r\nRuleName: Usermode\r\nUtcTime: 2026-05-21 11:19:41.578\r\nProcessGuid: {282c4705-ea45-6a0e-2812-000000005c00}\r\nProcessId: 1756\r\nImage: C:\\Users\\LENOVO\\AppData\\Local\\Microsoft\\OneDrive\\26.078.0426.0002\\FileCoAuth.exe\r\nUser: BOBBY\\LENOVO\r\nProtocol: tcp\r\nInitiated: true\r\nSourceIsIpv6: false\r\nSourceIp: 172.20.10.3\r\nSourceHostname: BoBbY\r\nSourcePort: 38094\r\nSourcePortName: -\r\nDestinationIsIpv6: false\r\nDestinationIp: 20.42.72.131\r\nDestinationHostname: -\r\nDestinationPort: 443\r\nDestinationPortName: https"
+  },
+  {
+    "Id": 3,
+    "TimeCreated": "2026-05-21T11:19:23.469Z",
+    "Computer": "BoBbY",
+    "Message": "Network connection detected:\r\nRuleName: Alert,Metasploit\r\nUtcTime: 2026-05-21 11:19:28.153\r\nProcessGuid: {282c4705-ea32-6a0e-2412-000000005c00}\r\nProcessId: 11576\r\nImage: C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\r\nUser: BOBBY\\LENOVO\r\nProtocol: tcp\r\nInitiated: true\r\nSourceIsIpv6: false\r\nSourceIp: 192.168.126.1\r\nSourceHostname: BoBbY\r\nSourcePort: 38091\r\nSourcePortName: -\r\nDestinationIsIpv6: false\r\nDestinationIp: 192.168.126.128\r\nDestinationHostname: -\r\nDestinationPort: 4444\r\nDestinationPortName: -"
+  }
 ]

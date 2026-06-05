@@ -6,7 +6,7 @@
 // Severity:     High
 // Confidence:   Multi-source ProcessGuid join — high fidelity signal
 // MITRE:        T1059.001, T1071.001
-// Lab validated: 2026-05-14 against Kali attacker 192.168.126.128
+// Lab validated: 2026-05-21 against Kali attacker 192.168.126.128
 // Author:       Bobby Okafor
 // Version:      1
 

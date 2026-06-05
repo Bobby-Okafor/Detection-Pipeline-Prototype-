@@ -1,0 +1,30 @@
+
+========================================================================
+  Detection Replay Harness - suite: all
+  DetectionLab v2 - Detection as Code validation
+========================================================================
+
+  [PASS]  chain1_c2_beacon  [v1]
+         PASS - 1 alert(s), confidence=0.675, diversity=2
+         -> DET-CHAIN-T1059.001-T1071.001-ExecToC2-v1 | confidence=0.675 | diversity=2 | noise=LIKELY_SIGNAL - cross-source corroboration, investigate
+
+  [PASS]  chain2_brute_to_exec  [v1]
+         PASS - 1 alert(s), confidence=0.804, diversity=3
+         -> DET-CHAIN-T1110.001-T1078-T1059-BruteToExec-v1 | confidence=0.804 | diversity=3 | noise=SIGNAL - high confidence multi-source, prioritise
+
+  [PASS]  chain3_persistence  [v1]
+         PASS - 1 alert(s), confidence=0.815, diversity=2
+         -> DET-CHAIN-T1547.001-T1053.005-PersistenceEstablish-v1 | confidence=0.815 | diversity=2 | noise=LIKELY_SIGNAL - cross-source corroboration, investigate
+
+  [PASS]  chain4_priv_to_exec  [v1]
+         PASS - 1 alert(s), confidence=1.0, diversity=4
+         -> DET-CHAIN-T1543.003-T1078-T1059-PrivEscToExec-v1 | confidence=1.0 | diversity=4 | noise=SIGNAL - high confidence multi-source, prioritise
+
+  [PASS]  clean_baseline  [v1]
+         PASS - 0 alert(s), confidence=n/a, diversity=n/a
+
+------------------------------------------------------------------------
+  Results: 5 passed - 0 failed - 0 skipped
+------------------------------------------------------------------------
+
+

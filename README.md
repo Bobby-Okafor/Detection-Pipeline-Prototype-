@@ -50,9 +50,9 @@ Any commit in the git history can be checked out and `python Pipeline/replay_har
 | DET-CHAIN-T1059.001-T1071.001-ExecToC2-v1 | T1059.001 + T1071.001 | Encoded PS → C2 beacon | Sysmon EID 1 + EID 3 | ✅ Validated | High |
 | DET-CHAIN-T1110.001-T1078-T1059-BruteToExec-v1 | T1110.001 + T1078 + T1059 | Brute force → auth exec | WinSec 4625 + 4624 + Sysmon EID 1 | ✅ Validated | High |
 | DET-CHAIN-T1547.001-T1053.005-PersistenceEstablish-v1 | T1547.001 + T1053.005 | Registry + scheduled task persist | Sysmon EID 1 + EID 13 + WinSec 4698 | ✅ Validated | High |
-| DET-CHAIN-T1543.003-T1078-T1059-PrivEscToExec-v1 | T1543.003 + T1078 + T1059 | Priv logon → service → exec | WinSec 4624 + 4672 + 7045 + 4688 | 🔄 In Progress | — |
+| DET-CHAIN-T1543.003-T1078-T1059-PrivEscToExec-v1 | T1543.003 + T1078 + T1059 | Priv logon → service → exec | WinSec 4624 + 4672 + 7045 + 4688 | ✅ Validated | High |
 
-**Coverage: 3 validated · 1 in progress**
+**Coverage: 4 validated**
 
 ---
 
@@ -81,33 +81,172 @@ Any commit in the git history can be checked out and `python Pipeline/replay_har
 ## Pipeline Architecture
 
 ```
-telemetry/raw/<chain>/          ← Immutable corpus (multi-source JSON)
-         │
-         ▼
-    [ ingest.py ]               ← Multi-source directory merge, source tagging
-         │
-         ▼
-   [ normalize.py ]             ← Sysmon flat KV + WinSec message-text parsing
-         │                         UTC timestamp unification, LogonId normalisation
-         ▼
-[ schema_validator.py ]         ← Field contract assertions per event type
-         │
-         ▼
-    [ correlate.py ]            ← Cross-telemetry chain builder
-         │                         ProcessGuid, LogonId, src_ip joins
-         │                         Shannon entropy scoring
-         │                         Composite confidence scoring
-         ▼
-    [ detect.py ]               ← Behavioural detection logic on chains
-         │                         Multi-source evidence required to fire
-         ▼
-  [ alert_schema.py ]           ← Structured alert with confidence + noise label
-         │
-         ▼
-   Alert JSON output            → reports/validation/
-                                → replay_harness.py (regression CI)
-                                → Sentinel DCR (production path)
+Raw Telemetry
+      │
+      ▼
+ ingest.py
+      │
+      ▼
+ normalize.py
+      │
+      ▼
+ schema_validator.py
+      │
+      ▼
+ correlate.py
+      │
+      ▼
+ CorrelationChain Objects
+      │
+      ▼
+ detect.py
+      │
+      ▼
+ Alert Objects
+      │
+      ▼
+ replay_harness.py
+      │
+      ▼
+ Validation Results
 ```
+
+### Ingestion
+
+`Pipeline/ingest.py` loads a validation corpus from either a single JSON file or a multi-file directory. Directory mode merges all JSON files in `telemetry/raw/<chain>/`, preserves source-file provenance through `_source_file`, and abstracts telemetry source type through filename-derived tags such as `sysmon_process`, `sysmon_network`, `winsec_logon_success`, `winsec_service`, and `winsec_privilege`.
+
+### Normalization
+
+`Pipeline/normalize.py` converts Sysmon flat key/value messages and Windows Security message text into a common event schema. It abstracts raw `Id`/`EventID` values into normalized `event_id`, converts timestamps to UTC ISO format, normalizes `LogonId` casing, and extracts source-specific fields such as `ProcessGuid`, `CommandLine`, `TargetObject`, `TaskName`, `ServiceName`, `SourceIp`, and privilege lists.
+
+### Correlation
+
+`Pipeline/correlate.py` builds `CorrelationChain` objects from normalized events. The correlation engine joins by high-specificity `ProcessGuid`, session-level `LogonId`, attacker `src_ip`, `user+host`, and scoped host/time joins for event types such as Windows Security 7045 that do not reliably carry user or logon context. Each chain records join fields, source diversity, event span, entropy, and composite confidence.
+
+### Detection
+
+`Pipeline/detect.py` operates on `CorrelationChain` objects, not raw events. Detections require cross-source evidence before firing, which means alerts represent validated behavior chains rather than isolated signatures. This is the boundary where telemetry correlation becomes detection logic.
+
+### Validation
+
+`Pipeline/replay_harness.py` replays committed corpora through ingestion, normalization, schema validation, correlation, and detection. Each test case asserts expected detection IDs, alert counts, severity, source diversity, confidence thresholds, and clean-baseline behavior. A passing replay is the acceptance gate for Detection-as-Code changes.
+
+---
+
+## Validation Methodology
+
+Detections are validated using `Pipeline/replay_harness.py` against immutable telemetry corpora committed under `telemetry/raw/`.
+
+Validation workflow:
+
+1. Collect telemetry into immutable corpus directories under `telemetry/raw/`
+2. Normalize telemetry into the canonical event schema
+3. Execute schema validation
+4. Correlate events using `ProcessGuid`, `LogonId`, source IP, and temporal joins
+5. Execute detection logic against `CorrelationChain` objects
+6. Generate structured alert objects
+7. Validate expected detections using `replay_harness.py`
+
+Run the replay validation suite:
+
+```bash
+python Pipeline/replay_harness.py --verbose
+```
+
+Current validation status:
+
+| Detection | Status |
+|---|---|
+| ExecToC2 | PASS |
+| BruteToExec | PASS |
+| PersistenceEstablish | PASS |
+| PrivEscToExec | PASS |
+| Baseline | PASS |
+
+Validation results:
+
+- 5 passed
+- 0 failed
+- 0 skipped
+
+Replay validation serves as regression testing for detection logic, correlation joins, schema expectations, and corpus integrity. A passing result means the corpus loads, schema validation succeeds, correlation chains are built, expected detections fire, and the clean baseline remains alert-free.
+
+### Corpus Integrity Checks
+
+Validation requires:
+
+- Real correlation keys
+- Real `ProcessGuid` relationships
+- Real `LogonId` relationships
+- Timestamp consistency across sources
+- Multi-source corroboration
+- A clean baseline that remains alert-free
+
+---
+
+## Validation Lessons Learned
+
+### Chain1 ProcessGuid Investigation
+
+Initial chain1 validation relied on synthetic `ProcessGuid` values recorded in `provenance.json`. Live Sysmon Event ID 1 and Event ID 3 collection showed those values did not exist in the actual telemetry emitted by the Windows sensor.
+
+The correlation assumption was validated against live telemetry instead of being trusted from the simulation notes. The corpus was corrected using real `ProcessGuid` values extracted from Sysmon process creation and network connection events.
+
+Detection logic did not require modification. The fix was made at the corpus-quality layer, and replay validation continued to pass after the corrected telemetry was committed.
+
+This exercise demonstrated the importance of telemetry validation, corpus integrity, and evidence-based detection engineering before changing detection logic.
+
+---
+
+## Detection Registry
+
+| Detection ID | Evidence | Join Model | ATT&CK | Validation Corpus |
+|---|---|---|---|---|
+| `DET-CHAIN-T1059.001-T1071.001-ExecToC2-v1` | Sysmon EID 1 encoded PowerShell + Sysmon EID 3 network connection | `ProcessGuid` | T1059.001, T1071.001 | `telemetry/raw/chain1_c2_beacon/` |
+| `DET-CHAIN-T1110.001-T1078-T1059-BruteToExec-v1` | WinSec 4625 failures + WinSec 4624 success + Sysmon EID 1 execution | `src_ip`, `LogonId` | T1110.001, T1078, T1059 | `telemetry/raw/chain2_brute_exec/` |
+| `DET-CHAIN-T1547.001-T1053.005-PersistenceEstablish-v1` | Sysmon EID 1 scripting process + Sysmon EID 13 registry persistence + WinSec 4698 scheduled task | `ProcessGuid`, `LogonId` | T1547.001, T1053.005 | `telemetry/raw/chain3_persistence/` |
+| `DET-CHAIN-T1543.003-T1078-T1059-PrivEscToExec-v1` | WinSec 4624 logon + WinSec 4672 privilege assignment + WinSec 7045 service install + WinSec 4688 execution | `LogonId`, scoped `host_time` for 7045 | T1543.003, T1078, T1059 | `telemetry/raw/chain4_priv_exec/` |
+
+The registry is implemented in `Pipeline/replay_harness.py`. Each row above has a corresponding replay test case, Python detection path in `Pipeline/detect.py`, raw telemetry corpus under `telemetry/raw/`, and Sentinel KQL query under `kql/`.
+
+---
+
+## Replay Harness Usage
+
+Run the full validation suite:
+
+```bash
+python Pipeline/replay_harness.py --suite all --verbose --report
+```
+
+Expected result:
+
+```text
+5 passed
+0 failed
+0 skipped
+```
+
+A passing suite confirms:
+
+- Corpus files load successfully
+- Schema validation accepts required fields
+- Correlation chains are built
+- Expected detections fire
+- Source-diversity and confidence assertions pass
+- Clean baseline produces zero alerts
+
+---
+
+## Corpus Inventory
+
+| Corpus | Purpose | Sources | Expected Result |
+|---|---|---|---|
+| `chain1_c2_beacon` | Encoded PowerShell to C2 beacon | Sysmon EID 1, Sysmon EID 3 | `DET-CHAIN-T1059.001-T1071.001-ExecToC2-v1` |
+| `chain2_brute_exec` | Brute force followed by authenticated execution | WinSec 4625, WinSec 4624, Sysmon EID 1 | `DET-CHAIN-T1110.001-T1078-T1059-BruteToExec-v1` |
+| `chain3_persistence` | Registry Run key and scheduled task persistence | Sysmon EID 1, Sysmon EID 13, WinSec 4698 | `DET-CHAIN-T1547.001-T1053.005-PersistenceEstablish-v1` |
+| `chain4_priv_exec` | Privileged logon to service installation and execution | WinSec 4624, WinSec 4672, WinSec 7045, WinSec 4688 | `DET-CHAIN-T1543.003-T1078-T1059-PrivEscToExec-v1` |
+| `clean_baseline.json` | Benign baseline control | Sysmon + Windows Security baseline events | Zero alerts |
 
 ---
 
@@ -150,12 +289,12 @@ DetectionLab/
 │   └── atomic_reader.py            # Atomic test catalogue reader
 │
 ├── telemetry/
-│   ├── raw/                        # Immutable corpus (never overwritten)
-│   │   ├── chain1_c2_beacon/       # Sysmon EID 1 + EID 3
-│   │   ├── chain2_brute_exec/      # WinSec 4625 + 4624 + Sysmon EID 1
-│   │   ├── chain3_persistence/     # Sysmon EID 1 + EID 13 + WinSec 4698
-│   │   └── clean_baseline.json     # Zero-alert baseline
-│   └── normalised/                 # Post-pipeline output samples
+│   └── raw/                        # Immutable validation corpus
+│       ├── chain1_c2_beacon/       # Sysmon EID 1 + EID 3
+│       ├── chain2_brute_exec/      # WinSec 4625 + 4624 + Sysmon EID 1
+│       ├── chain3_persistence/     # Sysmon EID 1 + EID 13 + WinSec 4698
+│       ├── chain4_priv_exec/       # WinSec 4624 + 4672 + 7045 + 4688
+│       └── clean_baseline.json     # Zero-alert baseline
 │
 ├── attack_runs/                    # Simulation execution records
 │   ├── chain1_T1059.001_T1071.001/
@@ -164,16 +303,11 @@ DetectionLab/
 │
 ├── reports/
 │   ├── validation/                 # Per-detection validation reports
-│   ├── ci/                         # CI coverage reports
-│   └── tuning/                     # False positive analysis
+│   └── ci/                         # CI coverage reports
 │
 ├── kql/                            # Microsoft Sentinel queries
-├── sigma/                          # SIEM-portable Sigma rules
-├── playbooks/                      # Analyst response guides
-├── Detections/
-│   ├── validated/                  # Production-grade detections
-│   ├── in_progress/                # Under development
-│   └── deprecated/                 # Superseded detections
+├── requirements.txt                # Python dependency manifest
+├── validation_report.txt           # Latest local replay evidence
 │
 └── .github/workflows/
     └── validate_pipeline.yml       # CI — runs replay harness on every push

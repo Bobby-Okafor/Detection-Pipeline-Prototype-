@@ -24,7 +24,7 @@ let ScriptingProcs = WindowsEvent
     Image       = tostring(EventData.Image),
     CmdLine     = tostring(EventData.CommandLine),
     User        = tostring(EventData.User),
-    LogonId     = tostring(EventData.LogonId)
+    LogonId     = tolower(tostring(EventData.LogonId))
 | where Image has_any ("powershell", "cmd.exe", "wscript", "cscript")
 | project
     t_proc = TimeGenerated, ProcessGuid, Image, CmdLine, User, LogonId, Computer;
@@ -47,7 +47,7 @@ let TaskCreation = SecurityEvent
     t_task = TimeGenerated,
     TaskName = TaskName,
     TaskUser = SubjectUserName,
-    LogonId  = SubjectLogonId,
+    LogonId  = tolower(tostring(SubjectLogonId)),
     Computer;
 
 // Registry persistence correlation via ProcessGuid

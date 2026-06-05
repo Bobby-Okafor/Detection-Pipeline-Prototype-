@@ -42,6 +42,53 @@ from correlate import build_correlation_chains
 from detect import run_all_detections
 
 
+def _supports_unicode() -> bool:
+    """Return True when stdout can encode the harness' decorative output."""
+    encoding = sys.stdout.encoding or ""
+    return encoding.lower().replace("-", "") in {"utf8", "utf8sig"}
+
+
+UNICODE_OUTPUT = _supports_unicode()
+
+
+def _safe_text(text: str) -> str:
+    if UNICODE_OUTPUT:
+        return text
+
+    replacements = {
+        "═": "=",
+        "─": "-",
+        "✅": "[PASS]",
+        "❌": "[FAIL]",
+        "⏭": "[SKIP]",
+        "→": "->",
+        "—": "-",
+        "·": "-",
+    }
+    for old, new in replacements.items():
+        text = text.replace(old, new)
+    return text
+
+
+def _print(text: str = "", **kwargs) -> None:
+    print(_safe_text(text), **kwargs)
+
+
+def _status_label(result: "TestResult") -> str:
+    if UNICODE_OUTPUT:
+        if result.skipped:
+            return "⏭  SKIP"
+        if result.passed:
+            return "✅ PASS"
+        return "❌ FAIL"
+
+    if result.skipped:
+        return "[SKIP]"
+    if result.passed:
+        return "[PASS]"
+    return "[FAIL]"
+
+
 # ---------------------------------------------------------------------------
 # Test case registry
 # ---------------------------------------------------------------------------
@@ -138,9 +185,9 @@ TEST_REGISTRY: list[ReplayTestCase] = [
         baseline_file="telemetry/raw/clean_baseline.json",
         expected_alert_count=1,
         expected_detection_ids=["DET-CHAIN-T1543.003-T1078-T1059-PrivEscToExec-v1"],
-        expected_fields={"severity": "critical", "source_diversity": 3},
+        expected_fields={"severity": "critical", "source_diversity": 4},
         min_confidence=0.60,
-        min_source_diversity=3,
+        min_source_diversity=4,
         correlation_window=300,
         detection_version="v1",
     ),
@@ -305,47 +352,42 @@ def run_suite(suite_name: str, verbose: bool = False, write_report: bool = False
     ]
 
     if not cases:
-        print(f"[ERROR] No test cases for suite '{suite_name}'", file=sys.stderr)
+        _print(f"[ERROR] No test cases for suite '{suite_name}'", file=sys.stderr)
         return 1
 
     results: list[TestResult] = []
 
-    print(f"\n{'═' * 72}")
-    print(f"  Detection Replay Harness — suite: {suite_name}")
-    print(f"  DetectionLab v2 — Detection as Code validation")
-    print(f"{'═' * 72}\n")
+    _print(f"\n{'═' * 72}")
+    _print(f"  Detection Replay Harness — suite: {suite_name}")
+    _print(f"  DetectionLab v2 — Detection as Code validation")
+    _print(f"{'═' * 72}\n")
 
     for tc in cases:
         result = run_test(tc, verbose=verbose)
         results.append(result)
 
-        if result.skipped:
-            status = "⏭  SKIP"
-        elif result.passed:
-            status = "✅ PASS"
-        else:
-            status = "❌ FAIL"
+        status = _status_label(result)
 
-        print(f"  {status}  {tc.name}  [{tc.detection_version}]")
-        print(f"         {result.message}")
+        _print(f"  {status}  {tc.name}  [{tc.detection_version}]")
+        _print(f"         {result.message}")
 
         if verbose and result.alerts:
             for a in result.alerts:
-                print(
+                _print(
                     f"         → {a.get('detection_id')} | "
                     f"confidence={a.get('confidence_score')} | "
                     f"diversity={a.get('source_diversity')} | "
                     f"noise={a.get('noise_classification')}"
                 )
-        print()
+        _print()
 
     passed  = sum(1 for r in results if r.passed)
     failed  = sum(1 for r in results if not r.passed and not r.skipped)
     skipped = sum(1 for r in results if r.skipped)
 
-    print(f"{'─' * 72}")
-    print(f"  Results: {passed} passed · {failed} failed · {skipped} skipped")
-    print(f"{'─' * 72}\n")
+    _print(f"{'─' * 72}")
+    _print(f"  Results: {passed} passed · {failed} failed · {skipped} skipped")
+    _print(f"{'─' * 72}\n")
 
     if write_report:
         _write_ci_report(results, suite_name)
@@ -381,7 +423,7 @@ def _write_ci_report(results: list[TestResult], suite_name: str) -> None:
     report_path.parent.mkdir(parents=True, exist_ok=True)
     with open(report_path, "w") as f:
         json.dump(report, f, indent=2)
-    print(f"[+] CI report written to {report_path}", file=sys.stderr)
+    _print(f"[+] CI report written to {report_path}", file=sys.stderr)
 
 
 # ---------------------------------------------------------------------------
@@ -404,11 +446,11 @@ if __name__ == "__main__":
     if args.test:
         tc = next((t for t in TEST_REGISTRY if t.name == args.test), None)
         if not tc:
-            print(f"[ERROR] Test '{args.test}' not found.", file=sys.stderr)
+            _print(f"[ERROR] Test '{args.test}' not found.", file=sys.stderr)
             sys.exit(1)
         result = run_test(tc, verbose=args.verbose)
-        status = "✅ PASS" if result.passed else ("⏭  SKIP" if result.skipped else "❌ FAIL")
-        print(f"\n{status}  {tc.name}: {result.message}\n")
+        status = _status_label(result)
+        _print(f"\n{status}  {tc.name}: {result.message}\n")
         sys.exit(0 if result.passed else 1)
 
     sys.exit(run_suite(args.suite, verbose=args.verbose, write_report=args.report))

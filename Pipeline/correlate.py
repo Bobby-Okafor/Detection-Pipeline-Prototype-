@@ -11,6 +11,7 @@ Join field priority (highest to lowest specificity):
     2. logon_id      — Windows stamps this on 4624 and Sysmon EID 1 for same session
     3. src_ip        — joins attacker-originated 4625 failures with 4624 success
     4. user + host   — fallback session join within a time window
+    5. host + time    — scoped fallback for service-install events with no session ID
 
 Each CorrelationChain carries:
     - All contributing events grouped by source type
@@ -186,6 +187,7 @@ def _join_field_strength(join_fields: dict) -> float:
         "logon_guid":   0.85,
         "src_ip":       0.60,
         "user_host":    0.40,
+        "host_time":    0.35,
         "user_time":    0.30,
     }
 
@@ -222,14 +224,14 @@ def build_correlation_chains(
     logon_id_index: dict[str, list[dict]] = {}
     ip_index:       dict[str, list[dict]] = {}
     user_host_index: dict[str, list[dict]] = {}
+    host_service_index: dict[str, list[dict]] = {}
 
     for event in events:
         pg = event.get("process_guid")
-
-        if pg and pg != "{00000000-0000-0000-0000-000000000000}":
+        if pg:
             guid_index.setdefault(pg, []).append(event)
+
         lid = event.get("logon_id")
-        
         if lid:
             logon_id_index.setdefault(lid, []).append(event)
 
@@ -246,6 +248,9 @@ def build_correlation_chains(
         if user and host:
             key = f"{user.lower()}@{host.lower()}"
             user_host_index.setdefault(key, []).append(event)
+
+        if host and event.get("_source_type") == "winsec_service":
+            host_service_index.setdefault(host.lower(), []).append(event)
 
     chains: list[CorrelationChain] = []
     seen_event_groups: set = set()
@@ -302,6 +307,16 @@ def build_correlation_chains(
                     if e is not anchor and e not in related and _in_window(e, anchor_time, window_seconds):
                         related.append(e)
                         join_fields["user_host"] = key
+
+        # Windows 7045 service-install events often lack LogonId/user context.
+        # Add them only as host/time corroboration so detections can still
+        # require stronger joins on the surrounding logon and execution events.
+        host = anchor.get("host")
+        if host:
+            for e in host_service_index.get(host.lower(), []):
+                if e is not anchor and e not in related and _in_window(e, anchor_time, window_seconds):
+                    related.append(e)
+                    join_fields.setdefault("host_time", host.lower())
 
         # Only create chains with multiple events or explicit multi-source requirement
         if len(related) < 2:
