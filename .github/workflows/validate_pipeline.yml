@@ -78,10 +78,18 @@ jobs:
           print('Clean baseline validation passed: 0 false positives')
           "
 
+      - name: Run portable validation controller
+        run: python Pipeline/labctl.py validate --profile profiles/detectionlab_regression.yml --scenario chain1_c2_beacon
+
+      - name: Run canonical engineering gate
+        run: python Pipeline/labctl.py gate
+
       - name: Upload CI report
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: detection-validation-report
-          path: reports/ci/replay_harness_report.json
+          path: |
+            reports/ci/replay_harness_report.json
+            reports/validation/**/validation_evidence.*
           if-no-files-found: ignore

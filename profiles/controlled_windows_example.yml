@@ -1,0 +1,20 @@
+profile_id: controlled-windows-example
+profile_version: "1.0"
+description: Example profile for a local Windows/Sysmon controlled-environment export.
+telemetry:
+  input: workspace/telemetry
+scenarios:
+  - id: local-controlled-execution
+    input: workspace/telemetry
+    baseline: workspace/baseline.json
+    correlation_window_seconds: 300
+    expected_detection_ids:
+      - DET-CHAIN-T1059.001-T1071.001-ExecToC2-v1
+    expected_alert_count: 1
+    minimum_confidence: 0.55
+    minimum_source_diversity: 2
+    required_source_types: [sysmon_process, sysmon_network]
+    required_correlation_keys: [process_guid]
+    clean_baseline:
+      expected_alert_count: 0
+    notes: Replace paths and expectations with evidence from your own controlled run.

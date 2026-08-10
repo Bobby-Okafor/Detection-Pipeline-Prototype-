@@ -1,0 +1,79 @@
+profile_id: detectionlab-regression
+profile_version: "1.0"
+description: Canonical committed DetectionLab replay scenarios.
+telemetry:
+  input: telemetry/raw
+scenarios:
+  - id: chain1_c2_beacon
+    input: telemetry/raw/chain1_c2_beacon
+    baseline: telemetry/raw/clean_baseline.json
+    correlation_window_seconds: 60
+    expected_detection_ids:
+      - DET-CHAIN-T1059.001-T1071.001-ExecToC2-v1
+    expected_alert_count: 1
+    minimum_confidence: 0.55
+    minimum_source_diversity: 2
+    expected_severity: high
+    required_source_types: [sysmon_process, sysmon_network]
+    required_correlation_keys: [process_guid]
+    clean_baseline:
+      expected_alert_count: 0
+    attack:
+      techniques: [T1059.001, T1071.001]
+  - id: chain2_brute_to_exec
+    input: telemetry/raw/chain2_brute_exec
+    baseline: telemetry/raw/clean_baseline.json
+    correlation_window_seconds: 300
+    expected_detection_ids:
+      - DET-CHAIN-T1110.001-T1078-T1059-BruteToExec-v1
+    expected_alert_count: 1
+    minimum_confidence: 0.60
+    minimum_source_diversity: 3
+    expected_severity: critical
+    required_source_types: [winsec_logon_failure, winsec_logon_success, sysmon_process]
+    required_correlation_keys: [src_ip, logon_id]
+    clean_baseline:
+      expected_alert_count: 0
+    attack:
+      techniques: [T1110.001, T1078, T1059]
+  - id: chain3_persistence
+    input: telemetry/raw/chain3_persistence
+    baseline: telemetry/raw/clean_baseline.json
+    correlation_window_seconds: 120
+    expected_detection_ids:
+      - DET-CHAIN-T1547.001-T1053.005-PersistenceEstablish-v1
+    expected_alert_count: 1
+    minimum_confidence: 0.55
+    minimum_source_diversity: 2
+    expected_severity: high
+    required_source_types: [sysmon_process, sysmon_registry, winsec_task]
+    required_correlation_keys: [process_guid, logon_id]
+    clean_baseline:
+      expected_alert_count: 0
+    attack:
+      techniques: [T1547.001, T1053.005]
+  - id: chain4_priv_to_exec
+    input: telemetry/raw/chain4_priv_exec
+    baseline: telemetry/raw/clean_baseline.json
+    correlation_window_seconds: 300
+    expected_detection_ids:
+      - DET-CHAIN-T1543.003-T1078-T1059-PrivEscToExec-v1
+    expected_alert_count: 1
+    minimum_confidence: 0.60
+    minimum_source_diversity: 4
+    expected_severity: critical
+    required_source_types: [winsec_logon_success, winsec_privilege, winsec_service, winsec_process]
+    required_correlation_keys: [logon_id]
+    clean_baseline:
+      expected_alert_count: 0
+    attack:
+      techniques: [T1543.003, T1078, T1059]
+  - id: clean_baseline
+    input: telemetry/raw/clean_baseline.json
+    correlation_window_seconds: 300
+    expected_detection_ids: []
+    expected_alert_count: 0
+    minimum_confidence: 0.0
+    minimum_source_diversity: 1
+    clean_baseline:
+      expected_alert_count: 0

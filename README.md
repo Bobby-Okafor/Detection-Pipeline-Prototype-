@@ -1,5 +1,34 @@
 # DetectionLab
 
+## Why would another Detection Engineer clone this?
+
+DetectionLab provides a local, portable engineering mechanism for replaying and validating multi-source detections against controlled Windows/Sysmon telemetry. A clone gives another Detection Engineer a reusable pipeline, declarative validation profiles, telemetry-quality and correlation-readiness evidence, deterministic JSON/Markdown reports, and one acceptance gate—without requiring a SIEM, cloud service, connector, database, or API key.
+
+DetectionLab is a controlled detection-validation engineering lab and portable replay/validation framework. It demonstrates telemetry normalization, schema validation, multi-source correlation, behavioral detection, confidence assessment, replay, regression, and controlled-environment portability. It does not demonstrate enterprise production deployment, continuous ingestion, enterprise scale, multi-tenant operation, production SIEM replacement, or production customer outcomes.
+
+## Portable Validation Controller
+
+The controller in `Pipeline/labctl.py` orchestrates the existing ingestion, normalization, schema validation, correlation, and detection modules. It does not create a second detection engine or normalizer. Profiles in `profiles/` declare inputs and expectations without requiring edits to Python implementation code.
+
+Clone-to-validation path (verified locally):
+
+```bash
+pip install -r requirements.txt
+python Pipeline/labctl.py doctor
+python Pipeline/labctl.py init --workspace validation-workspace
+python Pipeline/labctl.py assess --input telemetry/raw/chain1_c2_beacon --output-dir reports/validation/assessment
+python Pipeline/labctl.py validate --profile profiles/detectionlab_regression.yml --scenario chain1_c2_beacon
+python Pipeline/labctl.py gate
+```
+
+The committed corpus is the repository-native demonstration path. To validate a controlled Windows export, place the JSON files in the initialized workspace, copy `profiles/controlled_windows_example.yml`, update its paths and expectations, then run `assess` followed by `validate`. `assess` is intentionally outcome-independent: it reports whether timestamps, schema, source inventory, join keys, and chains are structurally usable before a detection result is trusted.
+
+Optional local collection is provided by `windows/Export-DetectionLabTelemetry.ps1`. It uses local Windows event logs only, performs no remoting or network transfer, does not change logging policy, and may require elevated access. Export success does not prove telemetry completeness; unavailable channels and missing audit/Sysmon coverage remain validation findings.
+
+Every validation creates `validation_evidence.json` and `validation_evidence.md` containing profile identity, UTC provenance, input hashes, event counts, quality measurements, correlation evidence, expected/observed detections, findings, trust status, and final status. Exit code 0 means success, 2 means expectation or quality failure, and 1 means configuration/execution failure.
+
+The canonical engineering completion command is `python Pipeline/labctl.py gate`. No change is accepted until it passes. The repository-native contribution procedure is defined in `AGENTS.md`.
+
 ![Detection Pipeline Validation](https://github.com/Bobby-Okafor/DetectionLab/actions/workflows/validate_pipeline.yml/badge.svg)
 
 **Detection as Code portfolio** — multi-telemetry behavioural detections built across endpoint, network, and identity telemetry using a two-node Kali-Windows lab, Atomic Red Team adversary simulation, Python correlation pipelines, and Microsoft Sentinel KQL.
