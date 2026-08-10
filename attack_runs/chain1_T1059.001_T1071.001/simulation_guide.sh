@@ -1,4 +1,4 @@
-# Chain 1 — Execution to C2 Beacon Simulation
+# Chain 1: Execution to C2 Beacon Simulation
 # Attacker: Kali Linux (192.168.126.128)
 # Victim:   Windows BOBBY (192.168.126.1)
 # Techniques: T1059.001 + T1071.001

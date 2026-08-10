@@ -1,27 +1,27 @@
 """
-correlate.py — Cross-telemetry correlation engine
+correlate.py: Correlation across telemetry sources
 
-This module is the core of the multi-telemetry detection capability.
+This module is the core of the detection capability that uses multiple telemetry sources.
 It takes a normalised, time-sorted event stream from mixed sources
 (Sysmon EID 1, 3, 13, Windows Security 4624, 4625, 4688, 4698, 7045)
 and builds CorrelationChain objects by joining events on shared context fields.
 
 Join field priority (highest to lowest specificity):
-    1. process_guid  — Sysmon stamps this on EID 1 and EID 3 for same process
-    2. logon_id      — Windows stamps this on 4624 and Sysmon EID 1 for same session
-    3. src_ip        — joins attacker-originated 4625 failures with 4624 success
-    4. user + host   — fallback session join within a time window
-    5. host + time    — scoped fallback for service-install events with no session ID
+    1. process_guid  : Sysmon stamps this on EID 1 and EID 3 for the same process
+    2. logon_id      : Windows stamps this on 4624 and Sysmon EID 1 for the same session
+    3. src_ip        : joins attacker-originated 4625 failures with 4624 success
+    4. user + host   : fallback session join within a time window
+    5. host + time   : scoped fallback for service installation events with no session ID
 
 Each CorrelationChain carries:
     - All contributing events grouped by source type
     - The join fields that linked them
     - The time span from first to last event
-    - A source diversity score (how many different telemetry sources contributed)
+    - A source diversity score (how many telemetry sources contributed)
     - An entropy score for confidence calibration
 
 Detection functions in detect.py receive CorrelationChain objects,
-not raw event lists. This enforces the multi-telemetry requirement
+not raw event lists. This enforces the requirement for multiple telemetry sources
 at the architectural level.
 """
 
@@ -84,7 +84,7 @@ class CorrelationChain:
         return source_type in self.source_types
 
     def field_populated_ratio(self) -> float:
-        """Ratio of non-None fields across all events — measures telemetry completeness."""
+        """Ratio of populated fields across all events; measures telemetry completeness."""
         if not self.events:
             return 0.0
         total = sum(
@@ -142,7 +142,7 @@ def _calculate_confidence(chain: CorrelationChain) -> float:
         - Join field strength (0-1): quality of the correlation join
 
     Weights reflect operational importance:
-        Source diversity contributes most — cross-source detections
+        Source diversity contributes most; detections with evidence from multiple sources
         are inherently more reliable than single-source ones.
 
     Returns value between 0.0 and 1.0.
@@ -173,8 +173,8 @@ def _calculate_confidence(chain: CorrelationChain) -> float:
 def _join_field_strength(join_fields: dict) -> float:
     """
     Score the quality of correlation join fields.
-    ProcessGuid and LogonId are high-specificity joins.
-    IP-based joins are medium specificity.
+    ProcessGuid and LogonId are highly specific joins.
+    IP joins provide medium specificity.
     User+host+time fallbacks are lower specificity.
     """
     if not join_fields:
@@ -265,7 +265,7 @@ def build_correlation_chains(
         related: list[dict] = [anchor]
         join_fields: dict = {}
 
-        # Join by ProcessGuid — highest specificity
+        # Join by ProcessGuid, the most specific join
         pg = anchor.get("process_guid")
         if pg and pg in guid_index:
             for e in guid_index[pg]:
@@ -273,7 +273,7 @@ def build_correlation_chains(
                     related.append(e)
                     join_fields["process_guid"] = pg
 
-        # Join by LogonId — session correlation
+        # Join by LogonId for session correlation
         lid = anchor.get("logon_id")
         if lid and lid in logon_id_index:
             for e in logon_id_index[lid]:
@@ -281,7 +281,7 @@ def build_correlation_chains(
                     related.append(e)
                     join_fields["logon_id"] = lid
 
-        # Join by source IP — attacker IP correlation
+        # Join by source IP for attacker IP correlation
         src = anchor.get("src_ip")
         if src and src in ip_index and src not in ("127.0.0.1", "::1"):
             for e in ip_index[src]:
@@ -289,7 +289,7 @@ def build_correlation_chains(
                     related.append(e)
                     join_fields["src_ip"] = src
 
-        # Join by destination IP (anchor is the process making the connection)
+        # Join by destination IP when the anchor is the connecting process
         dst = anchor.get("dst_ip")
         if dst and dst in ip_index and dst not in ("127.0.0.1", "::1"):
             for e in ip_index[dst]:
@@ -297,7 +297,7 @@ def build_correlation_chains(
                     related.append(e)
                     join_fields.setdefault("dst_ip", dst)
 
-        # Join by user+host — fallback session correlation
+        # Join by user+host for fallback session correlation
         user = anchor.get("user")
         host = anchor.get("host")
         if user and host:
@@ -308,7 +308,7 @@ def build_correlation_chains(
                         related.append(e)
                         join_fields["user_host"] = key
 
-        # Windows 7045 service-install events often lack LogonId/user context.
+        # Windows 7045 service installation events often lack LogonId/user context.
         # Add them only as host/time corroboration so detections can still
         # require stronger joins on the surrounding logon and execution events.
         host = anchor.get("host")
@@ -318,11 +318,11 @@ def build_correlation_chains(
                     related.append(e)
                     join_fields.setdefault("host_time", host.lower())
 
-        # Only create chains with multiple events or explicit multi-source requirement
+        # Only create chains with multiple events or an explicit requirement for multiple sources
         if len(related) < 2:
             continue
 
-        # Deduplication — skip if this exact set of events was already chained
+        # Deduplication: skip if this exact set of events was already chained
         event_key = frozenset(id(e) for e in related)
         if event_key in seen_event_groups:
             continue

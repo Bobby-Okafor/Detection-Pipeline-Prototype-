@@ -4,7 +4,7 @@
 //               process via ProcessGuid correlation within 60 seconds.
 // Data Sources: Sysmon EID 1 (WindowsEvent), Sysmon EID 3 (WindowsEvent)
 // Severity:     High
-// Confidence:   Multi-source ProcessGuid join — high fidelity signal
+// Confidence:   ProcessGuid join across sources; high fidelity signal
 // MITRE:        T1059.001, T1071.001
 // Lab validated: 2026-05-21 against Kali attacker 192.168.126.128
 // Author:       Bobby Okafor

@@ -1,7 +1,7 @@
 // Detection ID: DET-CHAIN-T1547.001-T1053.005-PersistenceEstablish-v1
 // Description:  Scripting engine (PowerShell/cmd) writing a registry Run key
 //               (Sysmon EID 13) and/or creating a scheduled task (WinSec 4698)
-//               within 120 seconds. ProcessGuid and LogonId cross-source joins.
+//               within 120 seconds. ProcessGuid and LogonId joins across sources.
 // Data Sources: WindowsEvent Sysmon EID 1, EID 13; SecurityEvent 4698
 // Severity:     High
 // MITRE:        T1547.001, T1053.005

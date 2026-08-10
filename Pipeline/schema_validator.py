@@ -1,5 +1,5 @@
 """
-schema_validator.py — Schema contract enforcement
+schema_validator.py: Schema contract enforcement
 
 Validates normalised events against field contracts per event type.
 Supports both Sysmon flat-format and Windows Security message-format events.
@@ -9,61 +9,61 @@ import sys
 from typing import Optional
 
 SCHEMA_CONTRACTS: dict[int, dict] = {
-    # Sysmon EID 1 — Process Create
+    # Sysmon EID 1: process creation
     1: {
         "required":  ["event_id", "time", "process_name"],
         "typed":     {"event_id": int, "time": str},
         "warn_only": ["parent_process", "command_line", "user", "host", "process_guid", "logon_id"],
     },
-    # Sysmon EID 3 — Network Connection
+    # Sysmon EID 3: network connection
     3: {
         "required":  ["event_id", "time", "process_name", "dst_ip"],
         "typed":     {"event_id": int, "time": str},
         "warn_only": ["dst_port", "src_ip", "user", "host", "process_guid", "protocol"],
     },
-    # Sysmon EID 13 — Registry Value Set
+    # Sysmon EID 13: registry value set
     13: {
         "required":  ["event_id", "time", "process_name", "registry_key"],
         "typed":     {"event_id": int, "time": str},
         "warn_only": ["user", "host", "process_guid", "registry_value"],
     },
-    # Sysmon EID 22 — DNS Query
+    # Sysmon EID 22: DNS query
     22: {
         "required":  ["event_id", "time", "process_name"],
         "typed":     {"event_id": int, "time": str},
         "warn_only": ["query_name", "user", "host", "process_guid"],
     },
-    # Windows Security 4688 — Process Create
+    # Windows Security 4688: process creation
     4688: {
         "required":  ["event_id", "time", "process_name"],
         "typed":     {"event_id": int, "time": str},
         "warn_only": ["parent_process", "command_line", "user", "host", "logon_id"],
     },
-    # Windows Security 4624 — Logon Success
+    # Windows Security 4624: successful logon
     4624: {
         "required":  ["event_id", "time", "user"],
         "typed":     {"event_id": int, "time": str},
         "warn_only": ["src_ip", "host", "logon_type", "logon_id", "domain"],
     },
-    # Windows Security 4625 — Logon Failure
+    # Windows Security 4625: failed logon
     4625: {
         "required":  ["event_id", "time", "user"],
         "typed":     {"event_id": int, "time": str},
         "warn_only": ["src_ip", "host", "failure_reason"],
     },
-    # Windows Security 4698 — Scheduled Task Created
+    # Windows Security 4698: scheduled task creation
     4698: {
         "required":  ["event_id", "time"],
         "typed":     {"event_id": int, "time": str},
         "warn_only": ["task_name", "user", "host", "logon_id"],
     },
-    # Windows Security 7045 — Service Installed
+    # Windows Security 7045: service installation
     7045: {
         "required":  ["event_id", "time", "service_name"],
         "typed":     {"event_id": int, "time": str},
         "warn_only": ["service_file", "host"],
     },
-    # Windows Security 4672 — Special Privileges
+    # Windows Security 4672: special privileges
     4672: {
         "required":  ["event_id", "time", "user"],
         "typed":     {"event_id": int, "time": str},

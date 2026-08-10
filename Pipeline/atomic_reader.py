@@ -1,5 +1,5 @@
 """
-atomic_reader.py — Atomic Red Team test catalogue and simulation selector
+atomic_reader.py: Atomic Red Team test catalog and simulation selector
 
 Reads Atomic Red Team YAML definition files directly from your local atomics
 folder and produces a structured analysis of every available test for a given
@@ -153,14 +153,14 @@ def analyse_tests(
 
 def _recommend(native_ok: bool, prereqs: list, executor: str, windows_ok: bool) -> str:
     if not windows_ok:
-        return "SKIP — not supported on Windows"
+        return "SKIP: not supported on Windows"
     if not native_ok:
-        return f"SKIP — requires non-native executor: {executor}"
+        return f"SKIP: requires an executor other than the native one: {executor}"
     if len(prereqs) > 2:
-        return "CAUTION — multiple prerequisites required, check before running"
+        return "CAUTION: multiple prerequisites are required; check them before running"
     if len(prereqs) > 0:
-        return "RUNNABLE — has prerequisites, verify with -ShowPrereqs first"
-    return "RUNNABLE — no prerequisites, safe to execute directly"
+        return "RUNNABLE: has prerequisites; verify them with -ShowPrereqs first"
+    return "RUNNABLE: no prerequisites; safe to execute directly"
 
 
 # ---------------------------------------------------------------------------
@@ -178,7 +178,7 @@ def print_test_catalogue(tests: list[dict], verbose: bool = False) -> None:
     encoded_ps   = [t for t in tests if t["is_encoded_ps"]]
 
     print(f"\n{'═' * 70}")
-    print(f"  Atomic Red Team — {technique}: {tech_name}")
+    print(f"  Atomic Red Team: {technique}: {tech_name}")
     print(f"  Total tests: {len(tests)}  |  Runnable: {len(runnable)}  |  Encoded PS: {len(encoded_ps)}")
     print(f"{'═' * 70}\n")
 
@@ -187,7 +187,7 @@ def print_test_catalogue(tests: list[dict], verbose: bool = False) -> None:
                  "⚠️ " if "CAUTION" in t["recommendation"] or ("RUNNABLE" in t["recommendation"] and t["has_prereqs"]) else "❌"
 
         encoded_tag = " [ENCODED-PS]" if t["is_encoded_ps"] else ""
-        print(f"  {status} Test #{t['test_number']:02d} — {t['name']}{encoded_tag}")
+        print(f"  {status} Test #{t['test_number']:02d}: {t['name']}{encoded_tag}")
         print(f"       Executor:  {t['executor']}  |  Platforms: {', '.join(t['platforms'])}")
         print(f"       Status:    {t['recommendation']}")
 
@@ -216,19 +216,19 @@ def print_run_plan(tests: list[dict], technique: str) -> None:
     primary  = encoded if encoded else runnable[:3]
 
     print(f"\n{'═' * 70}")
-    print(f"  Execution Plan — {technique}")
+    print(f"  Execution Plan: {technique}")
     print(f"{'═' * 70}\n")
 
     if not primary:
         print("  No directly runnable tests found without prerequisites.\n")
         return
 
-    print("  Step 1 — Run simulation:")
+    print("  Step 1: Run simulation:")
     for t in primary:
         print(f"\n    # Test #{t['test_number']}: {t['name']}")
         print(f"    Invoke-AtomicTest {technique} -TestNumbers {t['test_number']}")
 
-    print("\n  Step 2 — Capture telemetry immediately after execution:")
+    print("\n  Step 2: Capture telemetry immediately after execution:")
     print("""
     $since = (Get-Date).AddMinutes(-5)
     Get-WinEvent -LogName Security |
@@ -240,7 +240,7 @@ def print_run_plan(tests: list[dict], technique: str) -> None:
         Out-File "C:\\DetectionLab_V2_fresh\\telemetry\\raw\\""" + f"{technique}_encoded_ps.json" + """ -Encoding UTF8
     """)
 
-    print("  Step 3 — Run pipeline against captured telemetry:")
+    print("  Step 3: Run pipeline against captured telemetry:")
     print(f"""
     python Pipeline/run_pipeline.py \\
         --input telemetry/raw/{technique}_encoded_ps.json \\

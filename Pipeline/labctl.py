@@ -1,4 +1,4 @@
-"""Portable, local-first validation controller for DetectionLab."""
+"""Local validation controller for DetectionLab."""
 from __future__ import annotations
 
 import argparse, hashlib, json, os, shutil, subprocess, sys, tempfile
@@ -119,7 +119,7 @@ def write_reports(report: dict, out: Path) -> tuple[Path, Path]:
     json_path, md_path = out / "validation_evidence.json", out / "validation_evidence.md"
     with json_path.open("w", encoding="utf-8") as f: json.dump(report, f, indent=2, sort_keys=True)
     q = report["quality"]
-    lines = [f"# DetectionLab Portable Validation Controller", "", f"- Final status: **{report['final_status']}**", f"- Trustworthy: **{report['trustworthy']}**", f"- Profile: `{report['profile_id']}`", f"- Run UTC: `{report['run_utc']}`", "", "## Evidence", f"- Input hashes: `{json.dumps(report['input_hashes'], sort_keys=True)}`", f"- Events: raw={q['raw_event_count']}, normalized={q['normalized_event_count']}, accepted={q['accepted_event_count']}, rejected={q['rejected_event_count']}", f"- Schema acceptance: `{q['schema_acceptance_rate']}`", f"- Sources: `{json.dumps(q['source_type_inventory'], sort_keys=True)}`", f"- Correlation chains: {q['correlation_chain_count']} ({q['multi_source_chain_count']} multi-source)", f"- Join mechanisms: `{', '.join(q['correlation_join_mechanisms']) or 'none'}`", f"- Detections expected: `{report['expected_detection_ids']}`", f"- Detections observed: `{report['observed_detection_ids']}`", "", "## Findings"] + [f"- {x}" for x in report["findings"]] + ["", "## Quality JSON", "```json", json.dumps(q, indent=2, sort_keys=True), "```"]
+    lines = [f"# DetectionLab Portable Validation Controller", "", f"- Final status: **{report['final_status']}**", f"- Trustworthy: **{report['trustworthy']}**", f"- Profile: `{report['profile_id']}`", f"- Run UTC: `{report['run_utc']}`", "", "## Evidence", f"- Input hashes: `{json.dumps(report['input_hashes'], sort_keys=True)}`", f"- Events: raw={q['raw_event_count']}, normalized={q['normalized_event_count']}, accepted={q['accepted_event_count']}, rejected={q['rejected_event_count']}", f"- Schema acceptance: `{q['schema_acceptance_rate']}`", f"- Sources: `{json.dumps(q['source_type_inventory'], sort_keys=True)}`", f"- Correlation chains: {q['correlation_chain_count']} ({q['multi_source_chain_count']} using multiple sources)", f"- Join mechanisms: `{', '.join(q['correlation_join_mechanisms']) or 'none'}`", f"- Detections expected: `{report['expected_detection_ids']}`", f"- Detections observed: `{report['observed_detection_ids']}`", "", "## Findings"] + [f"- {x}" for x in report["findings"]] + ["", "## Quality JSON", "```json", json.dumps(q, indent=2, sort_keys=True), "```"]
     md_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return json_path, md_path
 
@@ -146,7 +146,7 @@ def command_assess(args, profile=None, scenario=None) -> tuple[int, dict | None]
         if q["status"] == "FAIL": report["findings"].append("Telemetry quality is insufficient for trusted validation.")
         out = resolve_path(args.output_dir or "reports/validation")
         jp, mp = write_reports(report, out)
-        print(f"DetectionLab Portable Validation Controller\nEnvironment ........ READY\nTelemetry sources .. {', '.join(q['source_type_inventory'])}\nSchema acceptance .. {q['schema_acceptance_rate']}\nCorrelation keys ... {', '.join(q['correlation_join_mechanisms']) or 'none'}\nMulti-source chains  {q['multi_source_chain_count']}\nAssessment .......... {q['status']}\nReport ............. {jp}")
+        print(f"DetectionLab Portable Validation Controller\nEnvironment ........ READY\nTelemetry sources .. {', '.join(q['source_type_inventory'])}\nSchema acceptance .. {q['schema_acceptance_rate']}\nCorrelation keys ... {', '.join(q['correlation_join_mechanisms']) or 'none'}\nChains using multiple sources  {q['multi_source_chain_count']}\nAssessment .......... {q['status']}\nReport ............. {jp}")
         return (EXIT_OK if q["status"] in ("PASS", "WARN") else EXIT_EXPECTATION), report
     except Exception as e: return fail(str(e)), None
 
@@ -171,7 +171,7 @@ def command_validate(args) -> int:
             out = resolve_path(args.output_dir or "reports/validation") / s["id"]
             jp, mp = write_reports(report, out)
             if report["final_status"] != "PASS": overall = EXIT_EXPECTATION
-            print(f"DetectionLab Portable Validation Controller\nEnvironment ........ READY\nProfile ............ VALID\nTelemetry sources .. {', '.join(q['source_type_inventory'])}\nSchema acceptance .. {q['schema_acceptance_rate']}\nCorrelation keys ... {', '.join(q['correlation_join_mechanisms']) or 'none'}\nMulti-source chains  {q['multi_source_chain_count']}\nDetections expected  {s['expected_alert_count']}\nDetections observed  {len(alerts)}\nBaseline ........... {'PASS' if baseline_alerts is None or not baseline_alerts else 'FAIL'}\nValidation ......... {report['final_status']}\nReport ............. {jp}")
+            print(f"DetectionLab Portable Validation Controller\nEnvironment ........ READY\nProfile ............ VALID\nTelemetry sources .. {', '.join(q['source_type_inventory'])}\nSchema acceptance .. {q['schema_acceptance_rate']}\nCorrelation keys ... {', '.join(q['correlation_join_mechanisms']) or 'none'}\nChains using multiple sources  {q['multi_source_chain_count']}\nDetections expected  {s['expected_alert_count']}\nDetections observed  {len(alerts)}\nBaseline ........... {'PASS' if baseline_alerts is None or not baseline_alerts else 'FAIL'}\nValidation ......... {report['final_status']}\nReport ............. {jp}")
         except Exception as e: overall = EXIT_EXECUTION; print(f"[FAIL] scenario {s['id']}: {e}", file=sys.stderr)
     return overall
 
@@ -193,11 +193,11 @@ def command_gate(args) -> int:
         subprocess.run([sys.executable, "Pipeline/labctl.py", "validate", "--profile", str(invalid_profile)], cwd=ROOT, capture_output=True).returncode != 0,
         subprocess.run([sys.executable, "Pipeline/labctl.py", "validate", "--profile", "profiles/missing.yml"], cwd=ROOT, capture_output=True).returncode != 0,
     ])
-    checks.append(("Failure-path checks", failure_ok)); print(f"{'Failure-path checks':<30} {'PASS' if failure_ok else 'FAIL'}")
+    checks.append(("Failure path checks", failure_ok)); print(f"{'Failure path checks':<30} {'PASS' if failure_ok else 'FAIL'}")
     integrity = run("Report integrity", [sys.executable, "-c", "import json; from pathlib import Path; p=Path('reports/validation/chain1_c2_beacon/validation_evidence.json'); m=Path('reports/validation/chain1_c2_beacon/validation_evidence.md'); d=json.loads(p.read_text()); assert d['final_status']=='PASS' and 'quality' in d and m.exists()"])
     export_contract = run("Windows export contract", [sys.executable, "-c", "from pathlib import Path; p=Path('windows/Export-DetectionLabTelemetry.ps1').read_text(); required=['sysmon_eid1.json','sysmon_eid3.json','sysmon_eid11.json','sysmon_eid13.json','sysmon_eid22.json','winsec_4624.json','winsec_4625.json','winsec_4672.json','winsec_4688.json','winsec_4698.json','winsec_7045.json']; assert all(x in p for x in required) and 'Get-WinEvent' in p and 'Remoting' not in p"])
     final = all(x[1] for x in checks) and integrity and export_contract
-    print(f"{'CI-compatible execution':<30} {'PASS' if final else 'FAIL'}\n\nFINAL STATUS ............. {'ACCEPTED' if final else 'FAILED'}")
+    print(f"{'CI compatible execution':<30} {'PASS' if final else 'FAIL'}\n\nFINAL STATUS ............. {'ACCEPTED' if final else 'FAILED'}")
     return EXIT_OK if final else EXIT_EXECUTION
 
 def main() -> int:

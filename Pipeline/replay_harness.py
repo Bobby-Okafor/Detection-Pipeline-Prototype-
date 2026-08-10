@@ -1,5 +1,5 @@
 """
-replay_harness.py — Detection as Code regression test runner
+replay_harness.py: Detection as Code regression test runner
 
 This is the validation mechanism that makes Detection as Code claims credible.
 Every detection in the registry has a corresponding test case that:
@@ -12,7 +12,7 @@ Every detection in the registry has a corresponding test case that:
 Git replay guarantee:
     Any commit in the repo history can be checked out and this harness
     run to reproduce the exact validation state at that point in time.
-    The corpus files are immutable once committed — they are the ground
+    The corpus files are immutable once committed; they are the ground
     truth against which all detection versions are measured.
 
 Run modes:
@@ -98,9 +98,9 @@ class ReplayTestCase:
     name:                   str
     suite:                  str
     description:            str
-    telemetry_dir:          Optional[str]       # multi-source directory (primary)
+    telemetry_dir:          Optional[str]       # directory with multiple source files (primary)
     telemetry_file:         Optional[str]       # single file (fallback)
-    baseline_file:          Optional[str]       # clean baseline — must produce 0 alerts
+    baseline_file:          Optional[str]       # clean baseline; must produce 0 alerts
     expected_alert_count:   int
     expected_detection_ids: list[str]           = field(default_factory=list)
     expected_fields:        dict                = field(default_factory=dict)
@@ -118,7 +118,7 @@ TEST_REGISTRY: list[ReplayTestCase] = [
         description=(
             "Encoded PowerShell (Sysmon EID 1) followed by outbound network "
             "connection to Kali attacker IP (Sysmon EID 3). "
-            "ProcessGuid cross-source join. T1059.001 + T1071.001."
+            "ProcessGuid join across source files. T1059.001 + T1071.001."
         ),
         telemetry_dir="telemetry/raw/chain1_c2_beacon",
         telemetry_file=None,
@@ -158,7 +158,7 @@ TEST_REGISTRY: list[ReplayTestCase] = [
         description=(
             "PowerShell process (Sysmon EID 1) writing registry Run key "
             "(Sysmon EID 13) and creating scheduled task (WinSec 4698). "
-            "ProcessGuid and LogonId cross-source joins. T1547.001 + T1053.005."
+            "ProcessGuid and LogonId joins across source files. T1547.001 + T1053.005."
         ),
         telemetry_dir="telemetry/raw/chain3_persistence",
         telemetry_file=None,
@@ -178,7 +178,7 @@ TEST_REGISTRY: list[ReplayTestCase] = [
         description=(
             "Privileged logon (WinSec 4624 + 4672) followed by service "
             "installation (WinSec 7045) and execution (WinSec 4688). "
-            "LogonId cross-source join. T1543.003 + T1078 + T1059."
+            "LogonId join across source files. T1543.003 + T1078 + T1059."
         ),
         telemetry_dir="telemetry/raw/chain4_priv_exec",
         telemetry_file=None,
@@ -195,7 +195,7 @@ TEST_REGISTRY: list[ReplayTestCase] = [
     ReplayTestCase(
         name="clean_baseline",
         suite="baseline",
-        description="Clean environment telemetry — all detections must produce zero alerts.",
+        description="Clean environment telemetry; all detections must produce zero alerts.",
         telemetry_dir=None,
         telemetry_file="telemetry/raw/clean_baseline.json",
         baseline_file=None,
@@ -234,7 +234,7 @@ def run_test(tc: ReplayTestCase, verbose: bool = False) -> TestResult:
         if not tpath.exists():
             return TestResult(
                 name=tc.name, passed=False, skipped=True,
-                message=f"SKIP — telemetry directory not found: {tc.telemetry_dir}",
+        message=f"SKIP: telemetry directory not found: {tc.telemetry_dir}",
             )
         loader = lambda: load_directory(tpath)
     elif tc.telemetry_file:
@@ -242,13 +242,13 @@ def run_test(tc: ReplayTestCase, verbose: bool = False) -> TestResult:
         if not tpath.exists():
             return TestResult(
                 name=tc.name, passed=False, skipped=True,
-                message=f"SKIP — telemetry file not found: {tc.telemetry_file}",
+        message=f"SKIP: telemetry file not found: {tc.telemetry_file}",
             )
         loader = lambda: load_json(tpath)
     else:
         return TestResult(
             name=tc.name, passed=False,
-            message="TEST CONFIG ERROR — no telemetry source specified",
+            message="TEST CONFIG ERROR: no telemetry source specified",
         )
 
     try:
@@ -260,7 +260,7 @@ def run_test(tc: ReplayTestCase, verbose: bool = False) -> TestResult:
     except Exception as e:
         return TestResult(
             name=tc.name, passed=False,
-            message=f"PIPELINE ERROR — {type(e).__name__}: {e}\n{traceback.format_exc()}",
+            message=f"PIPELINE ERROR: {type(e).__name__}: {e}\n{traceback.format_exc()}",
         )
 
     duration_ms = round((time.time() - start) * 1000, 1)
@@ -329,7 +329,7 @@ def run_test(tc: ReplayTestCase, verbose: bool = False) -> TestResult:
     if failures:
         return TestResult(
             name=tc.name, passed=False,
-            message=f"FAIL — {'; '.join(failures)}",
+            message=f"FAIL: {'; '.join(failures)}",
             alerts=alerts, confidence_scores=conf_scores,
             source_diversity=diversity, duration_ms=duration_ms,
         )
@@ -337,7 +337,7 @@ def run_test(tc: ReplayTestCase, verbose: bool = False) -> TestResult:
     return TestResult(
         name=tc.name, passed=True,
         message=(
-            f"PASS — {tc.expected_alert_count} alert(s), "
+            f"PASS: {tc.expected_alert_count} alert(s), "
             f"confidence={round(sum(conf_scores)/len(conf_scores), 3) if conf_scores else 'n/a'}, "
             f"diversity={max(diversity) if diversity else 'n/a'}"
         ),
@@ -358,8 +358,8 @@ def run_suite(suite_name: str, verbose: bool = False, write_report: bool = False
     results: list[TestResult] = []
 
     _print(f"\n{'═' * 72}")
-    _print(f"  Detection Replay Harness — suite: {suite_name}")
-    _print(f"  DetectionLab v2 — Detection as Code validation")
+    _print(f"  Detection Replay Harness: suite {suite_name}")
+    _print(f"  DetectionLab v2: Detection as Code validation")
     _print(f"{'═' * 72}\n")
 
     for tc in cases:
@@ -432,7 +432,7 @@ def _write_ci_report(results: list[TestResult], suite_name: str) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Detection replay harness — Detection as Code validation"
+        description="Detection replay harness: Detection as Code validation"
     )
     parser.add_argument(
         "--suite", default="all",

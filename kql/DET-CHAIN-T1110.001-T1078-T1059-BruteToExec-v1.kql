@@ -2,7 +2,7 @@
 // Description:  Brute force failed logons (EID 4625) from same source IP,
 //               followed by successful logon (EID 4624), followed by process
 //               execution (Sysmon EID 1) under the authenticated LogonId.
-//               Three-source correlation: identity failure + success + endpoint.
+//               Correlation across three sources: identity failure + success + endpoint.
 // Data Sources: SecurityEvent (4624, 4625), WindowsEvent Sysmon EID 1
 // Severity:     Critical
 // MITRE:        T1110.001, T1078, T1059

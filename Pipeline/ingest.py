@@ -1,14 +1,14 @@
 """
-ingest.py — Multi-source log ingestion layer
+ingest.py: Ingestion from multiple log sources
 
 Supports two ingestion modes:
     Single file:  load_json(filepath) -> list[dict]
     Directory:    load_directory(dirpath) -> list[dict]
 
-Directory mode merges all JSON files in a folder into a single
-timestamped event stream, tagging each event with its source file
-and inferred source type. This is the primary mode for multi-telemetry
-detection chains.
+Directory mode merges all JSON files in a folder into one event stream
+ordered by timestamp. Each event is tagged with its source file and
+inferred source type. This is the primary mode for detection chains
+that use multiple telemetry sources.
 """
 
 import json

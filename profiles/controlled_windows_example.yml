@@ -1,6 +1,6 @@
 profile_id: controlled-windows-example
 profile_version: "1.0"
-description: Example profile for a local Windows/Sysmon controlled-environment export.
+description: Example profile for an export from a local Windows/Sysmon controlled environment.
 telemetry:
   input: workspace/telemetry
 scenarios:
@@ -17,4 +17,4 @@ scenarios:
     required_correlation_keys: [process_guid]
     clean_baseline:
       expected_alert_count: 0
-    notes: Replace paths and expectations with evidence from your own controlled run.
+    notes: Replace the paths and expectations with evidence from your own controlled run.

@@ -4,7 +4,7 @@
 //               (EID 4688) within 5 minutes.
 // Data Sources: SecurityEvent (4624, 4672, 4688, 7045)
 // Severity:     Critical
-// Confidence:   Four-source correlation. LogonId joins identity and process
+// Confidence:   Correlation across four sources. LogonId joins identity and process
 //               events; host/time joins service install because EID 7045 does
 //               not consistently include user or LogonId context.
 // MITRE:        T1543.003, T1078, T1059

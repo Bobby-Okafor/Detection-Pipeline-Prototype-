@@ -2,15 +2,15 @@
 
 ## Why would another Detection Engineer clone this?
 
-DetectionLab provides a local, portable engineering mechanism for replaying and validating multi-source detections against controlled Windows/Sysmon telemetry. A clone gives another Detection Engineer a reusable pipeline, declarative validation profiles, telemetry-quality and correlation-readiness evidence, deterministic JSON/Markdown reports, and one acceptance gate—without requiring a SIEM, cloud service, connector, database, or API key.
+DetectionLab provides a local mechanism for replaying and validating detections built from multiple telemetry sources in a controlled Windows/Sysmon environment. A clone gives another Detection Engineer a reusable pipeline, declarative validation profiles, evidence about telemetry quality and correlation readiness, deterministic JSON/Markdown reports, and one acceptance gate, without requiring a SIEM, cloud service, connector, database, or API key.
 
-DetectionLab is a controlled detection-validation engineering lab and portable replay/validation framework. It demonstrates telemetry normalization, schema validation, multi-source correlation, behavioral detection, confidence assessment, replay, regression, and controlled-environment portability. It does not demonstrate enterprise production deployment, continuous ingestion, enterprise scale, multi-tenant operation, production SIEM replacement, or production customer outcomes.
+DetectionLab is a controlled lab for detection validation and a portable framework for replay and validation. It demonstrates telemetry normalization, schema validation, correlation across multiple telemetry sources, behavioral detection, confidence assessment, replay, regression, and portability across controlled environments. It does not demonstrate enterprise production deployment, continuous ingestion, enterprise scale, multi-tenant operation, production SIEM replacement, or production customer outcomes.
 
 ## Portable Validation Controller
 
 The controller in `Pipeline/labctl.py` orchestrates the existing ingestion, normalization, schema validation, correlation, and detection modules. It does not create a second detection engine or normalizer. Profiles in `profiles/` declare inputs and expectations without requiring edits to Python implementation code.
 
-Clone-to-validation path (verified locally):
+Workflow from cloning the repository through validation (verified locally):
 
 ```bash
 pip install -r requirements.txt
@@ -21,17 +21,17 @@ python Pipeline/labctl.py validate --profile profiles/detectionlab_regression.ym
 python Pipeline/labctl.py gate
 ```
 
-The committed corpus is the repository-native demonstration path. To validate a controlled Windows export, place the JSON files in the initialized workspace, copy `profiles/controlled_windows_example.yml`, update its paths and expectations, then run `assess` followed by `validate`. `assess` is intentionally outcome-independent: it reports whether timestamps, schema, source inventory, join keys, and chains are structurally usable before a detection result is trusted.
+The committed corpus is the demonstration path included in the repository. To validate an export from a controlled Windows environment, place the JSON files in the initialized workspace, copy `profiles/controlled_windows_example.yml`, update its paths and expectations, then run `assess` followed by `validate`. `assess` does not depend on an expected detection outcome: it reports whether timestamps, schema, source inventory, join keys, and chains are structurally usable before a detection result is trusted.
 
 Optional local collection is provided by `windows/Export-DetectionLabTelemetry.ps1`. It uses local Windows event logs only, performs no remoting or network transfer, does not change logging policy, and may require elevated access. Export success does not prove telemetry completeness; unavailable channels and missing audit/Sysmon coverage remain validation findings.
 
 Every validation creates `validation_evidence.json` and `validation_evidence.md` containing profile identity, UTC provenance, input hashes, event counts, quality measurements, correlation evidence, expected/observed detections, findings, trust status, and final status. Exit code 0 means success, 2 means expectation or quality failure, and 1 means configuration/execution failure.
 
-The canonical engineering completion command is `python Pipeline/labctl.py gate`. No change is accepted until it passes. The repository-native contribution procedure is defined in `AGENTS.md`.
+The canonical engineering completion command is `python Pipeline/labctl.py gate`. No change is accepted until it passes. The contribution procedure defined in the repository is in `AGENTS.md`.
 
 ![Detection Pipeline Validation](https://github.com/Bobby-Okafor/DetectionLab/actions/workflows/validate_pipeline.yml/badge.svg)
 
-**Detection as Code portfolio** — multi-telemetry behavioural detections built across endpoint, network, and identity telemetry using a two-node Kali-Windows lab, Atomic Red Team adversary simulation, Python correlation pipelines, and Microsoft Sentinel KQL.
+**Detection as Code portfolio**: behavioral detections built from endpoint, network, and identity telemetry in a Kali and Windows lab, using Atomic Red Team simulations, Python correlation pipelines, and Microsoft Sentinel KQL.
 
 Every detection in this repository is:
 - Validated against real Atomic Red Team telemetry captures
@@ -44,7 +44,7 @@ Every detection in this repository is:
 
 ## Detection as Code Methodology
 
-Detections are treated as versioned, measurable systems — not isolated rules.
+Detections are treated as versioned, measurable systems, not isolated rules.
 
 Each detection follows this lifecycle:
 
@@ -65,7 +65,7 @@ Validation Report (reports/validation/)
         ↓
 Regression Test Case (Pipeline/replay_harness.py)
         ↓
-CI Gate (GitHub Actions — green badge = all detections proven)
+CI Gate (GitHub Actions; a green badge means all detections passed validation)
 ```
 
 Any commit in the git history can be checked out and `python Pipeline/replay_harness.py --suite all` will reproduce the exact validation state at that point in time.
@@ -142,7 +142,7 @@ Raw Telemetry
 
 ### Ingestion
 
-`Pipeline/ingest.py` loads a validation corpus from either a single JSON file or a multi-file directory. Directory mode merges all JSON files in `telemetry/raw/<chain>/`, preserves source-file provenance through `_source_file`, and abstracts telemetry source type through filename-derived tags such as `sysmon_process`, `sysmon_network`, `winsec_logon_success`, `winsec_service`, and `winsec_privilege`.
+`Pipeline/ingest.py` loads a validation corpus from either a single JSON file or a directory containing multiple files. Directory mode merges all JSON files in `telemetry/raw/<chain>/`, preserves source file provenance through `_source_file`, and abstracts telemetry source type through tags derived from filenames, such as `sysmon_process`, `sysmon_network`, `winsec_logon_success`, `winsec_service`, and `winsec_privilege`.
 
 ### Normalization
 
@@ -150,15 +150,15 @@ Raw Telemetry
 
 ### Correlation
 
-`Pipeline/correlate.py` builds `CorrelationChain` objects from normalized events. The correlation engine joins by high-specificity `ProcessGuid`, session-level `LogonId`, attacker `src_ip`, `user+host`, and scoped host/time joins for event types such as Windows Security 7045 that do not reliably carry user or logon context. Each chain records join fields, source diversity, event span, entropy, and composite confidence.
+`Pipeline/correlate.py` builds `CorrelationChain` objects from normalized events. The correlation engine joins by the highly specific `ProcessGuid`, session `LogonId`, attacker `src_ip`, `user+host`, and scoped host/time joins for event types such as Windows Security 7045 that do not reliably carry user or logon context. Each chain records join fields, source diversity, event span, entropy, and composite confidence.
 
 ### Detection
 
-`Pipeline/detect.py` operates on `CorrelationChain` objects, not raw events. Detections require cross-source evidence before firing, which means alerts represent validated behavior chains rather than isolated signatures. This is the boundary where telemetry correlation becomes detection logic.
+`Pipeline/detect.py` operates on `CorrelationChain` objects, not raw events. Detections require evidence from multiple sources before firing, so alerts represent validated behavior chains rather than isolated signatures. This is the boundary where telemetry correlation becomes detection logic.
 
 ### Validation
 
-`Pipeline/replay_harness.py` replays committed corpora through ingestion, normalization, schema validation, correlation, and detection. Each test case asserts expected detection IDs, alert counts, severity, source diversity, confidence thresholds, and clean-baseline behavior. A passing replay is the acceptance gate for Detection-as-Code changes.
+`Pipeline/replay_harness.py` replays committed corpora through ingestion, normalization, schema validation, correlation, and detection. Each test case asserts expected detection IDs, alert counts, severity, source diversity, confidence thresholds, and behavior on a clean baseline. A passing replay is the acceptance gate for changes to Detection as Code.
 
 ---
 
@@ -198,7 +198,7 @@ Validation results:
 - 0 failed
 - 0 skipped
 
-Replay validation serves as regression testing for detection logic, correlation joins, schema expectations, and corpus integrity. A passing result means the corpus loads, schema validation succeeds, correlation chains are built, expected detections fire, and the clean baseline remains alert-free.
+Replay validation serves as regression testing for detection logic, correlation joins, schema expectations, and corpus integrity. A passing result means the corpus loads, schema validation succeeds, correlation chains are built, expected detections fire, and the clean baseline produces no alerts.
 
 ### Corpus Integrity Checks
 
@@ -208,8 +208,8 @@ Validation requires:
 - Real `ProcessGuid` relationships
 - Real `LogonId` relationships
 - Timestamp consistency across sources
-- Multi-source corroboration
-- A clean baseline that remains alert-free
+- Corroboration from multiple telemetry sources
+- A clean baseline that produces no alerts
 
 ---
 
@@ -294,8 +294,8 @@ Every alert carries a composite confidence score derived from four factors:
 
 | Score | Label | Triage guidance |
 |---|---|---|
-| ≥ 0.80 + 3 sources | SIGNAL | Prioritise — high confidence multi-source |
-| ≥ 0.60 + 2 sources | LIKELY_SIGNAL | Investigate — cross-source corroboration |
+| ≥ 0.80 + 3 sources | SIGNAL | Prioritise: high confidence evidence from multiple sources |
+| ≥ 0.60 + 2 sources | LIKELY_SIGNAL | Investigate: corroboration across sources |
 | ≥ 0.40 | INVESTIGATE | Verify before escalating |
 | < 0.40 | LOW_FIDELITY | Tune or suppress |
 
@@ -307,9 +307,9 @@ Every alert carries a composite confidence score derived from four factors:
 DetectionLab/
 │
 ├── Pipeline/                       # Detection as Code engine
-│   ├── ingest.py                   # Multi-source ingestion
+│   ├── ingest.py                   # Ingestion from multiple sources
 │   ├── normalize.py                # Sysmon + WinSec normalisation
-│   ├── correlate.py                # Cross-telemetry correlation engine
+│   ├── correlate.py                # Correlation across telemetry sources
 │   ├── detect.py                   # Behavioural detection chains
 │   ├── alert_schema.py             # Structured alert with confidence scoring
 │   ├── schema_validator.py         # Field contract enforcement
@@ -339,7 +339,7 @@ DetectionLab/
 ├── validation_report.txt           # Latest local replay evidence
 │
 └── .github/workflows/
-    └── validate_pipeline.yml       # CI — runs replay harness on every push
+    └── validate_pipeline.yml       # CI: runs replay harness on every push
 ```
 
 ---
@@ -351,7 +351,7 @@ git clone https://github.com/Bobby-Okafor/DetectionLab.git
 cd DetectionLab
 pip install -r requirements.txt
 
-# Run multi-source pipeline against C2 beacon telemetry
+# Run the pipeline against C2 beacon telemetry from multiple sources
 python Pipeline/run_pipeline.py \
   --input-dir telemetry/raw/chain1_c2_beacon \
   --output reports/validation/chain1_output.json \
@@ -385,5 +385,5 @@ python Pipeline/atomic_reader.py --technique T1059.001 --run-plan
 ## Author
 
 **Bobby Okafor**
-Detection Engineer — endpoint, identity, and network telemetry
+Detection Engineer, endpoint, identity, and network telemetry
 [GitHub](https://github.com/Bobby-Okafor) · [LinkedIn](https://www.linkedin.com/in/bobby-okafor-40a521380)

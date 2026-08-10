@@ -1,4 +1,4 @@
-# Chain 2 — Brute Force to Authenticated Execution
+# Chain 2: Brute Force to Authenticated Execution
 # Attacker: Kali Linux (192.168.126.128)
 # Victim:   Windows BOBBY (192.168.126.1)
 # Techniques: T1110.001 + T1078 + T1059

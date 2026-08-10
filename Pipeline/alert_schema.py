@@ -1,5 +1,5 @@
 """
-alert_schema.py — Structured alert output model
+alert_schema.py: Structured alert output model
 
 Every alert carries:
     - Detection ID and version
@@ -7,15 +7,15 @@ Every alert carries:
     - Confidence score (composite 0-1)
     - Entropy score (source diversity 0-1)
     - Source diversity count
-    - Multi-source evidence blocks
+    - Evidence blocks for each contributing source
     - Chain metadata for replay traceability
     - Noise reduction classification
 
 Confidence score interpretation:
-    >= 0.80  High confidence — multi-source, high-entropy, complete fields
-    >= 0.60  Medium confidence — partial cross-source, some field gaps
-    >= 0.40  Low confidence — limited corroboration, investigate further
-    <  0.40  Informational — single-source or very incomplete chain
+    >= 0.80  High confidence: evidence from multiple sources, high entropy, complete fields
+    >= 0.60  Medium confidence: partial corroboration across sources, some field gaps
+    >= 0.40  Low confidence: limited corroboration, investigate further
+    <  0.40  Informational: single source or very incomplete chain
 """
 
 import uuid
@@ -58,7 +58,7 @@ def build_alert(
         "severity":          _validate_severity(severity),
         "mitre_techniques":  techniques,
 
-        # Scoring — entropy and confidence for noise reduction
+        # Scoring: entropy and confidence for noise reduction
         "confidence_score":     round(confidence_score, 3),
         "confidence_label":     confidence_label,
         "entropy_score":        round(entropy_score, 3),
@@ -85,7 +85,7 @@ def build_alert(
         # Data sources that contributed
         "data_sources": sorted(chain.source_types),
 
-        # Multi-source evidence — one block per contributing source type
+        # Evidence grouped by contributing source type
         "evidence": _build_evidence_blocks(chain, primary_event, secondary_event),
     }
 

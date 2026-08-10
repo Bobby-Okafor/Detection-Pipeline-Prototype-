@@ -1,12 +1,12 @@
 """
-run_pipeline.py — Detection pipeline CLI entry point
+run_pipeline.py: Detection pipeline CLI entry point
 
 Full pipeline flow:
     ingest → normalise → validate schema → correlate → detect → score → output
 
 Supports two input modes:
     --input     Single JSON file (backward compatible)
-    --input-dir Directory of JSON files (multi-source mode, primary for DaC)
+    --input-dir Directory of JSON files (primary mode for multiple sources)
 
 Detection as Code versioning:
     Every pipeline run produces a run manifest in the output that includes:
@@ -38,7 +38,7 @@ from detect import run_all_detections
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="DetectionLab v2 — Multi-telemetry detection pipeline",
+        description="DetectionLab v2: detection pipeline for multiple telemetry sources",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
@@ -49,7 +49,7 @@ def main() -> int:
     )
     input_group.add_argument(
         "--input-dir", "-d",
-        help="Path to directory containing multiple JSON source files (multi-source mode)",
+        help="Path to directory containing JSON files from multiple sources",
     )
 
     parser.add_argument("--output", "-o", default=None, help="Path to write alerts JSON")
@@ -69,7 +69,7 @@ def main() -> int:
         if args.input_dir:
             raw_events = load_directory(args.input_dir)
             input_source = args.input_dir
-            input_mode = "multi-source directory"
+            input_mode = "directory containing multiple sources"
         else:
             raw_events = load_json(args.input)
             input_source = args.input
@@ -114,7 +114,7 @@ def main() -> int:
     if not args.quiet:
         print(f"[+] Built {len(chains)} correlation chains", file=sys.stderr)
         multi_source = sum(1 for c in chains if c.source_diversity >= 2)
-        print(f"    Multi-source chains: {multi_source}", file=sys.stderr)
+        print(f"    Chains using multiple sources: {multi_source}", file=sys.stderr)
 
     # ------------------------------------------------------------------
     # Detect

@@ -1,4 +1,4 @@
-# Chain 3 — Persistence Establishment via Registry + Scheduled Task
+# Chain 3: Persistence Establishment via Registry + Scheduled Task
 # Victim: Windows BOBBY (192.168.126.1)
 # Techniques: T1547.001 + T1053.005
 

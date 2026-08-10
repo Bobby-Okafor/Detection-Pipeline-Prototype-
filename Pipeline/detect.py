@@ -1,9 +1,9 @@
 """
-detect.py — Multi-telemetry behavioural detection engine
+detect.py — Behavioral detection engine
 
 All detections operate on CorrelationChain objects, not raw events.
-This enforces the multi-telemetry requirement at the architectural level
-and ensures every alert has cross-source evidence backing it.
+This enforces the requirement for evidence from multiple telemetry sources
+and ensures every alert has corroborating evidence.
 
 Detection registry:
     DET-CHAIN-T1059.001-T1071.001-ExecToC2-v1
@@ -83,7 +83,7 @@ def detect_exec_to_c2(
     Detects encoded PowerShell execution followed by an outbound network
     connection from the same process within the correlation window.
 
-    Requires cross-source evidence: sysmon_process AND sysmon_network.
+    Requires evidence from both sysmon_process and sysmon_network.
     ProcessGuid is the primary join field.
     """
     alerts = []

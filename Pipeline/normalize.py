@@ -1,5 +1,5 @@
 """
-normalize.py — Telemetry normalisation layer
+normalize.py: Telemetry normalization layer
 
 Handles two fundamentally different Windows telemetry formats:
 
@@ -19,7 +19,7 @@ Key design decisions:
    - ProcessGuid is preserved as a first-class correlation field
    - LogonId is normalised across both formats for session correlation
    - All timestamps normalised to UTC ISO 8601
-   - Schema warnings are non-fatal; events with missing optional
+   - Schema warnings do not fail validation; events with missing optional
      fields still pass through to the detection engine
 """
 
@@ -77,11 +77,11 @@ def normalize_events(events: list[dict]) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
-# Sysmon normalisers — flat key-value format
+# Sysmon normalizers: flat key/value format
 # ---------------------------------------------------------------------------
 
 def _normalise_sysmon_eid1(raw: dict) -> dict:
-    """Sysmon EID 1 — Process Create. Fields available as flat KV pairs."""
+    """Sysmon EID 1: process creation. Fields are available as flat key/value pairs."""
     msg = raw.get("Message", "")
     kv = _parse_sysmon_message(msg) if msg else {}
 
@@ -119,7 +119,7 @@ def _normalise_sysmon_eid1(raw: dict) -> dict:
 
 
 def _normalise_sysmon_eid3(raw: dict) -> dict:
-    """Sysmon EID 3 — Network Connection."""
+    """Sysmon EID 3: network connection."""
     msg = raw.get("Message", "")
     kv = _parse_sysmon_message(msg) if msg else {}
 
@@ -156,7 +156,7 @@ def _normalise_sysmon_eid3(raw: dict) -> dict:
 
 
 def _normalise_sysmon_eid13(raw: dict) -> dict:
-    """Sysmon EID 13 — Registry Value Set."""
+    """Sysmon EID 13: registry value set."""
     msg = raw.get("Message", "")
     kv = _parse_sysmon_message(msg) if msg else {}
 
@@ -185,7 +185,7 @@ def _normalise_sysmon_eid13(raw: dict) -> dict:
 
 
 def _normalise_sysmon_eid22(raw: dict) -> dict:
-    """Sysmon EID 22 — DNS Query."""
+    """Sysmon EID 22: DNS query."""
     msg = raw.get("Message", "")
     kv = _parse_sysmon_message(msg) if msg else {}
 
@@ -207,11 +207,11 @@ def _normalise_sysmon_eid22(raw: dict) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Windows Security normalisers — message text format
+# Windows Security normalizers: message text format
 # ---------------------------------------------------------------------------
 
 def _normalise_winsec_4688(raw: dict) -> dict:
-    """Windows Security EID 4688 — Process Creation."""
+    """Windows Security EID 4688: process creation."""
     message = raw.get("Message", "")
 
     process_name   = _extract_last_field(message, "New Process Name:")
@@ -239,7 +239,7 @@ def _normalise_winsec_4688(raw: dict) -> dict:
 
 
 def _normalise_winsec_logon(raw: dict, event_id: int) -> dict:
-    """Windows Security EID 4624/4625 — Logon events."""
+    """Windows Security EID 4624/4625: logon events."""
     message = raw.get("Message", "")
 
     # For logon events extract from New Logon section for 4624
@@ -276,7 +276,7 @@ def _normalise_winsec_logon(raw: dict, event_id: int) -> dict:
 
 
 def _normalise_winsec_4698(raw: dict) -> dict:
-    """Windows Security EID 4698 — Scheduled Task Created."""
+    """Windows Security EID 4698: scheduled task creation."""
     message = raw.get("Message", "")
 
     user      = _extract_creator_subject_user(message)
@@ -300,7 +300,7 @@ def _normalise_winsec_4698(raw: dict) -> dict:
 
 
 def _normalise_winsec_7045(raw: dict) -> dict:
-    """Windows Security EID 7045 — New Service Installed."""
+    """Windows Security EID 7045: new service installation."""
     message = raw.get("Message", "")
 
     record = {
@@ -320,7 +320,7 @@ def _normalise_winsec_7045(raw: dict) -> dict:
 
 
 def _normalise_winsec_4672(raw: dict) -> dict:
-    """Windows Security EID 4672 — Special Privileges Assigned."""
+    """Windows Security EID 4672: special privileges assigned."""
     message = raw.get("Message", "")
 
     record = {
@@ -534,7 +534,7 @@ def _extract_host(event: dict, kv: dict) -> Optional[str]:
 
 
 def _normalise_logon_id(logon_id: Optional[str]) -> Optional[str]:
-    """Normalise logon ID to lowercase hex for consistent cross-source matching."""
+    """Normalize logon ID to lowercase hexadecimal for consistent matching across sources."""
     if not logon_id:
         return None
     val = str(logon_id).strip().lower()
